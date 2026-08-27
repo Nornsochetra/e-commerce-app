@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mercato Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"><style>body{font-family:Manrope,system-ui,sans-serif}</style>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="min-h-screen bg-[#e5eee8] text-slate-900 antialiased">
+  <div id="root"></div>
+  <script type="text/babel">
+    function App() {
+      const pages = [
+        ["Authentication", "Login, register and recovery", "authentication.html", "01"],
+        ["Products", "Discover, search and filter", "product.html", "02"],
+        ["Shopping cart", "Manage items and quantity", "shopping-cart.html", "03"],
+        ["Wishlist", "Save favorite products", "wishlist.html", "04"],
+        ["Orders", "Checkout, history and details", "orders.html", "05"],
+        ["Profile", "View and edit account", "user-profile.html", "06"],
+        ["Notifications", "Review order and shopping updates", "notifications.html", "07"],
+      ];
+      return <main className="relative mx-auto min-h-screen max-w-5xl overflow-hidden px-5 py-12 sm:px-8">
+        <div className="pointer-events-none absolute -right-32 -top-44 h-[32rem] w-[32rem] rounded-full bg-emerald-400/20 blur-3xl"></div>
+        <div className="mb-10 flex items-center gap-3">
+          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-700 font-black text-white shadow-lg shadow-emerald-700/20">M</div>
+          <div><p className="font-bold">Mercato</p><p className="text-xs text-slate-500">Mobile commerce prototype</p></div>
+        </div>
+        <section className="mb-10 max-w-2xl">
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">React + Tailwind CSS</span>
+          <h1 className="mt-5 text-4xl font-extrabold tracking-[-.05em] sm:text-6xl">A storefront designed<br/>to feel effortless.</h1>
+          <p className="mt-4 text-lg leading-8 text-slate-600">A connected, mock-data prototype for reviewing the main mobile application features before Flutter implementation.</p>
+        </section>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {pages.map(([name, detail, href, number]) => <a key={href} href={href} className="group rounded-[2rem] border border-emerald-100 bg-[#f9fcfa] p-5 shadow-xl shadow-slate-900/5 transition hover:-translate-y-1 hover:border-emerald-400">
+            <div className="mb-8 flex items-center justify-between"><span className="text-xs font-bold text-emerald-700">{number}</span><span className="text-slate-400 transition group-hover:translate-x-1 group-hover:text-emerald-700">→</span></div>
+            <h2 className="text-lg font-bold">{name}</h2><p className="mt-1 text-sm text-slate-500">{detail}</p>
+          </a>)}
+        </div>
+        <a href="authentication.html" className="mt-8 inline-flex rounded-2xl bg-emerald-700 px-6 py-3 font-bold text-white shadow-lg shadow-emerald-700/25 transition hover:bg-emerald-800">Launch prototype</a>
+      </main>;
+    }
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
