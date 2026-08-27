@@ -40,7 +40,7 @@ The user-profile feature allows an authenticated user to view and update approve
 
 ## 6. Business and Validation Rules
 
-- Name is required, trimmed, and limited to 120 characters.
+- Name is required, trimmed, and limited to 100 characters.
 - Email is required, trimmed, validated, and unique case-insensitively.
 - Phone is optional, may be cleared, and is limited to 32 characters; international normalization is
   deferred.
@@ -63,6 +63,15 @@ The user-profile feature allows an authenticated user to view and update approve
 - Authentication
 - Final user data model
 - User-profile API specification
+
+## 8.1 Backend implementation status
+
+- `GET /api/v1/auth/me` is the single current-user information endpoint.
+- `PATCH /api/v1/me/profile` updates approved profile fields.
+- Reads and updates are authenticated and scoped to the access-token owner.
+- Email uniqueness is enforced case-insensitively; email is normalized to lowercase.
+- Order, wishlist, and cart counters return zero until their corresponding backend sections are
+  implemented.
 
 ## 9. Acceptance Criteria
 

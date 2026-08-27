@@ -52,7 +52,7 @@ Failure (`data` absent):
 |---|---|---|---|
 | `HLT` | Service health | Infrastructure | Implemented |
 | `AUT` | Login, registration, recovery, token lifecycle | Splash and authentication | Implemented |
-| `USR` | Current-user profile | Profile and edit profile | Planned; contract approved |
+| `USR` | Current-user profile | Profile and edit profile | Implemented |
 | `CAT` | Categories, products, search, filters | Home and catalog | Planned; contract approved |
 | `CRT` | Current cart and items | Shopping cart | Planned; contract approved |
 | `WSH` | Current wishlist | Wishlist | Planned; contract approved |
@@ -94,7 +94,7 @@ Implemented response data:
 | `AUT-0203` | `POST /auth/refresh` | Refresh token | Issue a new token pair. |
 | `AUT-0204` | `POST /auth/forgot-password` | Public | Begin account recovery without revealing account existence. |
 | `AUT-0205` | `POST /auth/logout` | Access token | Revoke all tokens for the current account. |
-| `AUT-0601` | `GET /auth/me` | Access token | Read the authenticated identity. |
+| `AUT-0601` | `GET /auth/me` | Access token | Read the current user's full profile. |
 
 Verification and completion of password reset are intentionally absent until the recovery delivery
 method is approved in [authentication.md](features/authentication.md).
@@ -103,7 +103,6 @@ method is approved in [authentication.md](features/authentication.md).
 
 | ApiId | Endpoint | Auth | Purpose |
 |---|---|---|---|
-| `USR-0601` | `GET /me/profile` | Required | Read the current profile. |
 | `USR-0401` | `PATCH /me/profile` | Required | Partially update approved profile fields. |
 
 ### 3.4 `CAT` — product catalog
@@ -177,10 +176,9 @@ below define shared shapes. Envelope `status` and `common` fields are omitted fr
 | `AUT-0202` | `name`, `email`, `password` | Token pair plus `UserIdentity` | `EMAIL_ALREADY_REGISTERED` |
 | `AUT-0203` | `refreshToken` | Rotated `accessToken`, `refreshToken`, `expiresIn` | `INVALID_REFRESH_TOKEN` |
 | `AUT-0204` | `email` | Empty object | No account-existence error is exposed. |
-| `AUT-0205` | `refreshToken` | Empty object | `INVALID_REFRESH_TOKEN` |
-| `AUT-0601` | None | `UserIdentity` | `USER_NOT_FOUND` |
-| `USR-0601` | None | `UserProfile` | `USER_NOT_FOUND` |
-| `USR-0401` | Any of `name`, `email`, `phone` | Updated `UserProfile` | `EMAIL_ALREADY_REGISTERED` |
+| `AUT-0205` | None | Empty object | None. |
+| `AUT-0601` | None | `CurrentUser` | `USER_NOT_FOUND` |
+| `USR-0401` | Any of `name`, `email`, `phone` | Updated `CurrentUser` | `EMAIL_ALREADY_REGISTERED` |
 | `CAT-0101` | None | Array of `Category` | None. |
 | `CAT-0102` | `page`, `size`, `sort`, `query`, `categoryId`, `inStock` | `Pagination<ProductSummary>` | `CATEGORY_NOT_FOUND` |
 | `CAT-0601` | Path `productId` | `ProductDetail` | `PRODUCT_NOT_FOUND` |
@@ -288,33 +286,33 @@ Request: `{ "email": "alex@example.com" }`. The endpoint always returns 200 with
 well-formed email so account existence is not disclosed. Delivery and reset-completion endpoints are
 deferred.
 
-### 4.2.3 Current identity · `AUT-0601`
+### 4.2.3 Current user · `AUT-0601`
 
-Returns the `UserIdentity` shape used by login: `id`, `name`, `email`, nullable `phone`, and `role`.
-It contains authentication identity only; profile counters are returned by `USR-0601`.
+This is the single endpoint for reading the authenticated user's profile. It returns identity,
+timestamps, and the prototype navigation counts:
 
-### 4.2.4 `GET /me/profile` · `USR-0601`
-
-Returns `UserProfile`, which extends `UserIdentity` with timestamps and the prototype navigation
-counts:
+#### Response · 200
 
 ```json
 {
-  "id": "49c694e7-0ca5-4eca-a112-f7b4709318ca",
-  "name": "Alex Morgan",
-  "email": "alex@example.com",
-  "phone": "+855 12 345 678",
-  "role": "user",
-  "memberSince": "2026-01-10T09:00:00Z",
-  "counts": { "orders": 3, "wishlistItems": 2, "cartItems": 2 },
-  "createdAt": "2026-01-10T09:00:00Z",
-  "updatedAt": "2026-08-24T04:12:00Z"
+  "status": { "code": "SUCCESS", "message": "Success" },
+  "data": {
+    "id": "49c694e7-0ca5-4eca-a112-f7b4709318ca",
+    "name": "Alex Morgan",
+    "email": "alex@example.com",
+    "phone": "+855 12 345 678",
+    "role": "user",
+    "memberSince": "2026-01-10T09:00:00Z",
+    "counts": { "orders": 0, "wishlistItems": 0, "cartItems": 0 },
+    "createdAt": "2026-01-10T09:00:00Z",
+    "updatedAt": "2026-08-24T04:12:00Z"
+  },
+  "common": { "requestId": "0f2c…", "apiId": "AUT-0601", "timestamp": "2026-08-24T04:12:00Z" }
 }
 ```
 
-`memberSince` equals `createdAt` and exists as a display-semantic alias; the client formats its year.
-`cartItems` is the sum of cart quantities. Initials are derived from `name`. The prototype member
-benefit is promotional mock copy and is not returned in v1.
+`memberSince` equals `createdAt`; the client derives initials from `name`. Until the order,
+wishlist, and cart sections are implemented, their counters return zero.
 
 ### 4.3 `PATCH /me/profile` · `USR-0401`
 
@@ -342,7 +340,7 @@ Omitted fields remain unchanged. An empty `phone` clears it; name and email cann
     "phone": "+855 12 345 678",
     "role": "user",
     "memberSince": "2026-01-10T09:00:00Z",
-    "counts": { "orders": 3, "wishlistItems": 2, "cartItems": 2 },
+    "counts": { "orders": 0, "wishlistItems": 0, "cartItems": 0 },
     "createdAt": "2026-01-10T09:00:00Z",
     "updatedAt": "2026-08-24T04:12:00Z"
   },

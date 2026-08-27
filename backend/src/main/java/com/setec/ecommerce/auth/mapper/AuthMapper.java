@@ -1,6 +1,8 @@
 package com.setec.ecommerce.auth.mapper;
 
 import com.setec.ecommerce.auth.payload.AuthResponse;
+import com.setec.ecommerce.auth.payload.CurrentUserCountsResponse;
+import com.setec.ecommerce.auth.payload.CurrentUserResponse;
 import com.setec.ecommerce.auth.payload.RegisterRequest;
 import com.setec.ecommerce.auth.payload.TokenResponse;
 import com.setec.ecommerce.auth.payload.UserIdentityResponse;
@@ -11,6 +13,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class AuthMapper {
+  private static final CurrentUserCountsResponse EMPTY_COUNTS =
+      new CurrentUserCountsResponse(0, 0, 0);
+
   public User toUser(RegisterRequest request, String normalizedEmail, String passwordHash) {
     return User.builder()
         .name(request.name())
@@ -28,6 +33,19 @@ public class AuthMapper {
         user.getEmail(),
         user.getPhone(),
         user.getRole().name().toLowerCase(Locale.ROOT));
+  }
+
+  public CurrentUserResponse toCurrentUserResponse(User user) {
+    return new CurrentUserResponse(
+        user.getUuid(),
+        user.getName(),
+        user.getEmail(),
+        user.getPhone(),
+        user.getRole().name().toLowerCase(Locale.ROOT),
+        user.getCreatedAt(),
+        EMPTY_COUNTS,
+        user.getCreatedAt(),
+        user.getUpdatedAt());
   }
 
   public AuthResponse toAuthResponse(

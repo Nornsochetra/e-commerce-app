@@ -2,12 +2,12 @@ package com.setec.ecommerce.auth.service;
 
 import com.setec.ecommerce.auth.mapper.AuthMapper;
 import com.setec.ecommerce.auth.payload.AuthResponse;
+import com.setec.ecommerce.auth.payload.CurrentUserResponse;
 import com.setec.ecommerce.auth.payload.ForgotPasswordRequest;
 import com.setec.ecommerce.auth.payload.LoginRequest;
 import com.setec.ecommerce.auth.payload.RefreshTokenRequest;
 import com.setec.ecommerce.auth.payload.RegisterRequest;
 import com.setec.ecommerce.auth.payload.TokenResponse;
-import com.setec.ecommerce.auth.payload.UserIdentityResponse;
 import com.setec.ecommerce.shared.api.StatusCode;
 import com.setec.ecommerce.shared.domain.User;
 import com.setec.ecommerce.shared.exception.BusinessException;
@@ -100,8 +100,8 @@ public class AuthService {
   }
 
   @Transactional(readOnly = true)
-  public UserIdentityResponse me() {
-    return authMapper.toIdentityResponse(currentUserResolver.require());
+  public CurrentUserResponse me() {
+    return authMapper.toCurrentUserResponse(currentUserResolver.require());
   }
 
   @Transactional(readOnly = true)

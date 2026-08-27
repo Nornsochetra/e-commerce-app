@@ -1,12 +1,12 @@
 package com.setec.ecommerce.auth.controller;
 
 import com.setec.ecommerce.auth.payload.AuthResponse;
+import com.setec.ecommerce.auth.payload.CurrentUserResponse;
 import com.setec.ecommerce.auth.payload.ForgotPasswordRequest;
 import com.setec.ecommerce.auth.payload.LoginRequest;
 import com.setec.ecommerce.auth.payload.RefreshTokenRequest;
 import com.setec.ecommerce.auth.payload.RegisterRequest;
 import com.setec.ecommerce.auth.payload.TokenResponse;
-import com.setec.ecommerce.auth.payload.UserIdentityResponse;
 import com.setec.ecommerce.auth.service.AuthService;
 import com.setec.ecommerce.shared.api.ApiId;
 import com.setec.ecommerce.shared.api.ApiResponse;
@@ -80,7 +80,7 @@ public class AuthController extends BaseController {
   @GetMapping("/me")
   @ApiId("AUT-0601")
   @Operation(summary = "Read the current identity")
-  public ResponseEntity<ApiResponse<UserIdentityResponse>> me() {
+  public ResponseEntity<ApiResponse<CurrentUserResponse>> me() {
     return ok(authService.me());
   }
 }

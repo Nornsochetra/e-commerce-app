@@ -191,8 +191,16 @@ class AuthApiTest {
         .perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + accessToken))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.common.apiId").value("AUT-0601"))
+        .andExpect(jsonPath("$.data.name").value("Alex"))
         .andExpect(jsonPath("$.data.email").value("alex@example.com"))
-        .andExpect(jsonPath("$.data.phone").value((Object) null));
+        .andExpect(jsonPath("$.data.phone").value((Object) null))
+        .andExpect(jsonPath("$.data.role").value("user"))
+        .andExpect(jsonPath("$.data.memberSince").isNotEmpty())
+        .andExpect(jsonPath("$.data.createdAt").isNotEmpty())
+        .andExpect(jsonPath("$.data.updatedAt").isNotEmpty())
+        .andExpect(jsonPath("$.data.counts.orders").value(0))
+        .andExpect(jsonPath("$.data.counts.wishlistItems").value(0))
+        .andExpect(jsonPath("$.data.counts.cartItems").value(0));
 
     mockMvc
         .perform(get("/api/v1/auth/me"))
