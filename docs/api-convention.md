@@ -188,8 +188,9 @@ Area codes: `HLT` health · `AUT` authentication · `USR` profile · `CAT` catal
 - An access token and refresh token are different credentials; a refresh token must never authorize a
   normal API request.
 - `INVALID_CREDENTIALS` does not reveal whether the email or password was wrong.
-- Passwords contain at least 8 characters. Access tokens last 15 minutes; refresh sessions last 7
-  days and rotate on refresh.
+- Passwords contain at least 8 characters. Access tokens last 15 minutes and refresh tokens last 7
+  days. Refreshing issues a new pair without invalidating earlier unexpired refresh tokens. Logout
+  requires only the access token and revokes every previously issued token for the account.
 - Registration creates a session immediately. Email verification is deferred.
 - Cart and wishlist require authentication; guest persistence and merging are deferred.
 

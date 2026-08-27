@@ -1,0 +1,45 @@
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# IDE and editor metadata
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+*.swp
+
+# Local environment and machine-specific configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+.envrc
+application-local.yml
+application-local.yaml
+application-local.properties
+
+# Private keys and keystores
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Logs and runtime output
+*.log
+logs/
+
+# Backend generated output
+backend/.gradle/
+backend/build/
+backend/out/
+
+# Frontend generated output
+frontend-app/.dart_tool/
+frontend-app/.pub-cache/
+frontend-app/.pub/
+frontend-app/build/
+frontend-app/coverage/

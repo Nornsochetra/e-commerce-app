@@ -18,7 +18,8 @@ public enum StatusCode {
   NOT_FOUND(HttpStatus.NOT_FOUND, ErrorType.NOT_FOUND, "The resource {0} was not found"),
   METHOD_NOT_ALLOWED(
       HttpStatus.METHOD_NOT_ALLOWED, ErrorType.VALIDATION, "HTTP method is not allowed"),
-  NOT_ACCEPTABLE(HttpStatus.NOT_ACCEPTABLE, ErrorType.VALIDATION, "Response type is not acceptable"),
+  NOT_ACCEPTABLE(
+      HttpStatus.NOT_ACCEPTABLE, ErrorType.VALIDATION, "Response type is not acceptable"),
   DUPLICATE(HttpStatus.CONFLICT, ErrorType.CONFLICT, "The resource already exists"),
   CONFLICT(HttpStatus.CONFLICT, ErrorType.CONFLICT, "The request conflicts with current state"),
   PAYLOAD_TOO_LARGE(
@@ -29,7 +30,11 @@ public enum StatusCode {
       HttpStatus.INTERNAL_SERVER_ERROR, ErrorType.SYSTEM, "An unexpected error occurred"),
   INVALID_CREDENTIALS(
       HttpStatus.UNAUTHORIZED, ErrorType.AUTHENTICATION, "Email or password is incorrect"),
-  ACCOUNT_DISABLED(HttpStatus.UNAUTHORIZED, ErrorType.AUTHENTICATION, "Account is disabled");
+  ACCOUNT_DISABLED(HttpStatus.UNAUTHORIZED, ErrorType.AUTHENTICATION, "Account is disabled"),
+  EMAIL_ALREADY_REGISTERED(HttpStatus.CONFLICT, ErrorType.CONFLICT, "Email is already registered"),
+  INVALID_REFRESH_TOKEN(
+      HttpStatus.UNAUTHORIZED, ErrorType.AUTHENTICATION, "Refresh token is invalid"),
+  USER_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorType.NOT_FOUND, "User was not found");
 
   private final HttpStatus httpStatus;
   private final ErrorType errorType;

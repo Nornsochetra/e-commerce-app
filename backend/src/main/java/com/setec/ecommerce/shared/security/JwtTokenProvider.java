@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -29,14 +30,14 @@ public class JwtTokenProvider {
 
   public JwtTokenProvider(RsaKeyProvider keys, JwtProperties properties) {
     this.properties = properties;
-    RSAKey jwk =
-        new RSAKey.Builder(keys.getPublicKey()).privateKey(keys.getPrivateKey()).build();
+    RSAKey jwk = new RSAKey.Builder(keys.getPublicKey()).privateKey(keys.getPrivateKey()).build();
     this.encoder = new NimbusJwtEncoder(new ImmutableJWKSet<>(new JWKSet(jwk)));
     this.decoder = NimbusJwtDecoder.withPublicKey(keys.getPublicKey()).build();
     this.decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(properties.getIssuer()));
   }
 
-  public String generate(String subject, TokenType tokenType, Collection<String> roles) {
+  public String generate(
+      String subject, TokenType tokenType, Collection<String> roles, long tokenVersion) {
     Instant issuedAt = Instant.now();
     Duration ttl =
         tokenType == TokenType.ACCESS
@@ -47,9 +48,11 @@ public class JwtTokenProvider {
             .issuer(properties.getIssuer())
             .issuedAt(issuedAt)
             .expiresAt(issuedAt.plus(ttl))
+            .id(UUID.randomUUID().toString())
             .subject(subject)
             .claim(TokenType.CLAIM, tokenType.name())
             .claim("roles", List.copyOf(roles))
+            .claim("tokenVersion", tokenVersion)
             .build();
     JwsHeader header = JwsHeader.with(SignatureAlgorithm.RS256).build();
     return encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
@@ -62,8 +65,12 @@ public class JwtTokenProvider {
           jwt.getSubject(),
           TokenType.valueOf(jwt.getClaimAsString(TokenType.CLAIM)),
           List.copyOf(jwt.getClaimAsStringList("roles")),
+          ((Number) jwt.getClaim("tokenVersion")).longValue(),
           jwt.getExpiresAt());
-    } catch (JwtException | IllegalArgumentException | NullPointerException exception) {
+    } catch (JwtException
+        | IllegalArgumentException
+        | NullPointerException
+        | ClassCastException exception) {
       throw new BusinessException(StatusCode.INVALID_TOKEN);
     }
   }

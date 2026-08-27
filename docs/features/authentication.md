@@ -23,7 +23,7 @@ Authentication provides the initial application entry and the flows required for
 
 - Display the application identity while initialization takes place.
 - Continue to the appropriate next screen after initialization.
-- Restore a valid refresh session and open Home; otherwise open Login.
+- Restore a valid refresh token and open Home; otherwise open Login.
 
 ### 4.2 Login
 
@@ -95,7 +95,11 @@ Authentication provides the initial application entry and the flows required for
 - Passwords contain at least 8 characters and are never logged or returned.
 - Registration rejects a normalized email already in use and signs the new user in immediately.
 - Access tokens expire after 15 minutes.
-- Refresh sessions expire after 7 days, rotate on use, and are revoked on logout.
+- Refresh tokens expire after 7 days. Refreshing issues a new token pair, while previously issued
+  refresh tokens remain valid until their own expiration or logout.
+- Logout requires only the access token, increments the account token version, and invalidates all
+  access and refresh tokens previously issued to that account on every device. The client also
+  discards its locally stored tokens.
 - A refresh token cannot authorize a normal API request.
 - Login uses one `INVALID_CREDENTIALS` result for wrong email or password.
 - Recovery requests do not reveal whether an account exists.

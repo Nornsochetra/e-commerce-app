@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.UUID;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,6 +28,10 @@ public class User extends BaseEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
+  @Builder.Default
+  @Column(nullable = false, unique = true, updatable = false)
+  private UUID uuid = UUID.randomUUID();
+
   @Column(nullable = false, length = 255)
   private String email;
 
@@ -36,14 +41,21 @@ public class User extends BaseEntity {
   @Column(nullable = false, length = 100)
   private String name;
 
+  @Column(length = 32)
+  private String phone;
+
   @Builder.Default
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
-  private Role role = Role.CUSTOMER;
+  private Role role = Role.USER;
 
   @Builder.Default
   @Column(name = "is_active", nullable = false)
   private boolean active = true;
+
+  @Builder.Default
+  @Column(name = "token_version", nullable = false)
+  private long tokenVersion = 0;
 
   @Column(name = "last_login_at")
   private Instant lastLoginAt;

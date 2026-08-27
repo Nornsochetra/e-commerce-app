@@ -1,7 +1,9 @@
 package com.setec.ecommerce.shared.security;
 
 import com.setec.ecommerce.shared.api.StatusCode;
+import com.setec.ecommerce.shared.domain.User;
 import com.setec.ecommerce.shared.exception.BusinessException;
+import com.setec.ecommerce.shared.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,9 +22,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private static final String BEARER_PREFIX = "Bearer ";
 
   private final JwtTokenProvider tokenProvider;
+  private final UserRepository userRepository;
 
-  public JwtAuthenticationFilter(JwtTokenProvider tokenProvider) {
+  public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, UserRepository userRepository) {
     this.tokenProvider = tokenProvider;
+    this.userRepository = userRepository;
   }
 
   @Override
@@ -35,6 +39,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       try {
         JwtClaims claims = tokenProvider.parse(token);
         if (claims.tokenType() != TokenType.ACCESS) {
+          throw new BusinessException(StatusCode.INVALID_TOKEN);
+        }
+        User user =
+            userRepository
+                .findById(Long.valueOf(claims.subject()))
+                .orElseThrow(() -> new BusinessException(StatusCode.INVALID_TOKEN));
+        if (!user.isActive() || user.getTokenVersion() != claims.tokenVersion()) {
           throw new BusinessException(StatusCode.INVALID_TOKEN);
         }
         var authorities =

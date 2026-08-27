@@ -25,7 +25,7 @@ public class CurrentUserResolver {
     User user =
         userRepository
             .findById(userId)
-            .orElseThrow(() -> new BusinessException(StatusCode.UNAUTHORIZED));
+            .orElseThrow(() -> new BusinessException(StatusCode.USER_NOT_FOUND));
     if (!user.isActive()) {
       throw new BusinessException(StatusCode.ACCOUNT_DISABLED);
     }

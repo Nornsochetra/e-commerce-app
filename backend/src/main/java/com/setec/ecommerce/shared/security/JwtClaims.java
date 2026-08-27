@@ -4,4 +4,8 @@ import java.time.Instant;
 import java.util.List;
 
 public record JwtClaims(
-    String subject, TokenType tokenType, List<String> roles, Instant expiresAt) {}
+    String subject,
+    TokenType tokenType,
+    List<String> roles,
+    long tokenVersion,
+    Instant expiresAt) {}

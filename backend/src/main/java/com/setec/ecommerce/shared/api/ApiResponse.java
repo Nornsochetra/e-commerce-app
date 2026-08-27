@@ -9,6 +9,7 @@ public record ApiResponse<T>(ApiStatus status, T data, CommonBlock common, ApiEr
   }
 
   public static <T> ApiResponse<T> failure(StatusCode statusCode, ApiError error) {
-    return new ApiResponse<>(ApiStatus.of(statusCode, error.message()), null, CommonBlock.current(), error);
+    return new ApiResponse<>(
+        ApiStatus.of(statusCode, error.message()), null, CommonBlock.current(), error);
   }
 }

@@ -10,10 +10,10 @@ import java.util.List;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
@@ -29,7 +29,6 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import tools.jackson.databind.exc.InvalidFormatException;
 
 @Slf4j
@@ -52,11 +51,16 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-  ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException exception) {
+  ResponseEntity<ApiResponse<Void>> handleTypeMismatch(
+      MethodArgumentTypeMismatchException exception) {
     return respond(
         StatusCode.INVALID_REQUEST,
         "Invalid value for " + exception.getName(),
-        List.of(new ApiErrorDetail(exception.getName(), "Value has the wrong type", safeValue(exception.getName(), exception.getValue()))));
+        List.of(
+            new ApiErrorDetail(
+                exception.getName(),
+                "Value has the wrong type",
+                safeValue(exception.getName(), exception.getValue()))));
   }
 
   @ExceptionHandler(MissingRequestHeaderException.class)
@@ -116,7 +120,8 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(NoResourceFoundException.class)
   ResponseEntity<ApiResponse<Void>> handleNotFound(NoResourceFoundException exception) {
-    return respond(StatusCode.NOT_FOUND, StatusCode.NOT_FOUND.format(exception.getResourcePath()), null);
+    return respond(
+        StatusCode.NOT_FOUND, StatusCode.NOT_FOUND.format(exception.getResourcePath()), null);
   }
 
   @ExceptionHandler(ConstraintViolationException.class)
@@ -127,9 +132,7 @@ public class GlobalExceptionHandler {
                 violation -> {
                   String field = violation.getPropertyPath().toString();
                   return new ApiErrorDetail(
-                      field,
-                      violation.getMessage(),
-                      safeValue(field, violation.getInvalidValue()));
+                      field, violation.getMessage(), safeValue(field, violation.getInvalidValue()));
                 })
             .toList();
     return respond(StatusCode.VALIDATION_ERROR, StatusCode.VALIDATION_ERROR.getMessage(), details);

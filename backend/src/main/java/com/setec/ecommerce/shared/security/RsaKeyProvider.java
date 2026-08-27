@@ -45,7 +45,8 @@ public class RsaKeyProvider {
 
     if (configured) {
       this.publicKey =
-          loadPublicKey(resourceLoader.getResource(properties.getPublicKey()), properties.getPublicKey());
+          loadPublicKey(
+              resourceLoader.getResource(properties.getPublicKey()), properties.getPublicKey());
       this.privateKey =
           loadPrivateKey(
               resourceLoader.getResource(properties.getPrivateKey()), properties.getPrivateKey());
@@ -88,8 +89,7 @@ public class RsaKeyProvider {
 
   private byte[] decodePem(String pem, String location) {
     try {
-      String encoded =
-          pem.replaceAll("-----(BEGIN|END)[^-]*-----", "").replaceAll("\\s", "");
+      String encoded = pem.replaceAll("-----(BEGIN|END)[^-]*-----", "").replaceAll("\\s", "");
       return Base64.getDecoder().decode(encoded);
     } catch (IllegalArgumentException exception) {
       throw new IllegalStateException("RSA key is not valid PEM: " + location, exception);

@@ -1,0 +1,8 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+ALTER TABLE users ADD COLUMN uuid UUID;
+UPDATE users SET uuid = gen_random_uuid() WHERE uuid IS NULL;
+ALTER TABLE users ALTER COLUMN uuid SET NOT NULL;
+ALTER TABLE users ADD CONSTRAINT uq_users_uuid UNIQUE (uuid);
+
+ALTER TABLE users ADD COLUMN phone VARCHAR(32);

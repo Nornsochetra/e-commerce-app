@@ -5,12 +5,7 @@ import java.util.function.Function;
 import org.springframework.data.domain.Page;
 
 public record Pagination<T>(
-    List<T> items,
-    int page,
-    int size,
-    long totalElements,
-    int totalPages,
-    boolean hasNext) {
+    List<T> items, int page, int size, long totalElements, int totalPages, boolean hasNext) {
   public static <T> Pagination<T> of(Page<T> source) {
     return new Pagination<>(
         source.getContent(),

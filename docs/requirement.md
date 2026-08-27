@@ -100,7 +100,8 @@ The current scope defines 19 screens. The three deferred screens bring the compl
 - Email and password are the v1 credentials.
 - Email comparison is case-insensitive.
 - Passwords contain at least 8 characters and are stored only as one-way hashes.
-- Access tokens last 15 minutes; refresh sessions last 7 days and rotate on refresh.
+- Access tokens last 15 minutes; refresh tokens last 7 days. Refreshing issues a new pair without
+  invalidating earlier unexpired pairs; logout invalidates all tokens for the account.
 - Registration signs the user in immediately. Email verification is deferred.
 - Password recovery accepts an email and always returns the same acknowledgement. Recovery delivery
   and reset completion remain deferred until an email provider is selected.

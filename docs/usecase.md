@@ -65,7 +65,7 @@ flowchart LR
 | UC-011 | Place order | Authenticated user | One order is created and confirmation is displayed. |
 | UC-012 | Review orders | Authenticated user | Owned order history and details are displayed. |
 | UC-013 | Manage notifications | Authenticated user | Notifications are reviewed, marked read, or cleared. |
-| UC-014 | Log out | Authenticated user | Current refresh session is revoked and login is displayed. |
+| UC-014 | Log out | Authenticated user | All account tokens are revoked and login is displayed. |
 
 ## 5. Detailed use-case flows
 
@@ -222,7 +222,7 @@ An absent order and another user's order both return `ORDER_NOT_FOUND`.
 ### UC-014 — Log out
 
 1. The user selects Sign out from Profile.
-2. The system revokes the current refresh session.
+2. The system revokes all access and refresh tokens issued to the account.
 3. The application removes local tokens and returns to Login.
 
 ## 6. Navigation map
