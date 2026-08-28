@@ -34,7 +34,9 @@ public enum StatusCode {
   EMAIL_ALREADY_REGISTERED(HttpStatus.CONFLICT, ErrorType.CONFLICT, "Email is already registered"),
   INVALID_REFRESH_TOKEN(
       HttpStatus.UNAUTHORIZED, ErrorType.AUTHENTICATION, "Refresh token is invalid"),
-  USER_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorType.NOT_FOUND, "User was not found");
+  USER_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorType.NOT_FOUND, "User was not found"),
+  CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorType.NOT_FOUND, "Category was not found"),
+  PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorType.NOT_FOUND, "Product was not found");
 
   private final HttpStatus httpStatus;
   private final ErrorType errorType;
