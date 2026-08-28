@@ -7,6 +7,7 @@ import com.setec.ecommerce.shared.api.StatusCode;
 import com.setec.ecommerce.shared.domain.User;
 import com.setec.ecommerce.shared.exception.BusinessException;
 import com.setec.ecommerce.shared.helper.CurrentUserResolver;
+import com.setec.ecommerce.shared.repository.CartItemRepository;
 import com.setec.ecommerce.shared.repository.UserRepository;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProfileService {
   private final CurrentUserResolver currentUserResolver;
   private final UserRepository userRepository;
+  private final CartItemRepository cartItemRepository;
   private final AuthMapper authMapper;
 
   @Transactional
@@ -44,7 +46,9 @@ public class ProfileService {
     }
 
     try {
-      return authMapper.toCurrentUserResponse(userRepository.saveAndFlush(user));
+      User saved = userRepository.saveAndFlush(user);
+      return authMapper.toCurrentUserResponse(
+          saved, cartItemRepository.sumQuantityByUserId(saved.getId()));
     } catch (DataIntegrityViolationException exception) {
       throw new BusinessException(StatusCode.EMAIL_ALREADY_REGISTERED);
     }

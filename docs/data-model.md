@@ -19,8 +19,8 @@ Companion documents:
 - [API specification](api-specification.md)
 - [Backend initialization blueprint](backend/backend-init-blueprint.md)
 
-> **Implementation boundary:** Identity migrations V1 through V4 are currently applied. Every later
-> migration is planned.
+> **Implementation boundary:** Migrations V1 through V6 are currently applied. V7 and V8 remain
+> planned.
 
 ## 2. Conventions
 
@@ -41,8 +41,8 @@ Companion documents:
 | Group | Entities | Status |
 |---|---|---|
 | Identity | `users` | Implemented in `V1`, seeded by `V2`, and extended by `V3` and `V4`. |
-| Catalog | `categories`, `products`, `product_badges` | Planned `V5`. |
-| Shopping | `carts`, `cart_items`, `wishlist_items` | Planned `V6`. |
+| Catalog | `categories`, `products`, `product_badges` | Implemented in `V5`. |
+| Shopping | `carts`, `cart_items`, `wishlist_items` | Schema applied in `V6`; cart APIs implemented, wishlist APIs planned. |
 | Orders | `orders`, `order_items` | Planned `V7`. |
 | Notifications | `notifications` | Planned `V8`. |
 
@@ -179,8 +179,8 @@ erDiagram
 
 ## 5. DDL
 
-The first two migrations mirror the scaffold. Later blocks are the approved target DDL and retain
-their planned sequence so implementation does not collide with existing migration names.
+The first six migrations are applied. Later blocks are the approved target DDL and retain their
+planned sequence so implementation does not collide with existing migration names.
 
 ### 5.1 Applied identity schema — `V1` and `V2`
 
@@ -241,7 +241,7 @@ ALTER TABLE users
     ADD CONSTRAINT chk_users_token_version CHECK (token_version >= 0);
 ```
 
-### 5.4 Catalog — planned `V5`
+### 5.4 Catalog — applied `V5`
 
 ```sql
 -- V5__create_catalog.sql
@@ -321,7 +321,7 @@ CREATE INDEX ix_product_badges_product
 The product-name index is the initial search index. Replace it with PostgreSQL full-text or trigram
 search only when the matching requirements are approved.
 
-### 5.5 Cart and wishlist — planned `V6`
+### 5.5 Cart and wishlist — applied `V6`
 
 ```sql
 -- V6__create_cart_and_wishlist.sql
@@ -538,8 +538,8 @@ Card payment, cancellation, returns, push delivery, and notification preferences
 | `V2__seed_users.sql` | Seeds one development user. | Applied |
 | `V3__add_user_public_fields.sql` | Adds user UUID and phone required by API/profile. | Applied |
 | `V4__add_user_token_version.sql` | Adds account-wide access/refresh token revocation. | Applied |
-| `V5__create_catalog.sql` | Creates `categories`, `products`, `product_badges`, and featured ordering. | Planned |
-| `V6__create_cart_and_wishlist.sql` | Creates `carts`, `cart_items`, `wishlist_items`. | Planned |
+| `V5__create_catalog.sql` | Creates `categories`, `products`, `product_badges`, and featured ordering. | Applied |
+| `V6__create_cart_and_wishlist.sql` | Creates `carts`, `cart_items`, `wishlist_items`. | Applied |
 | `V7__create_orders.sql` | Creates orders/items with delivery and payment snapshots. | Planned |
 | `V8__create_notifications.sql` | Creates `notifications`. | Planned |
 

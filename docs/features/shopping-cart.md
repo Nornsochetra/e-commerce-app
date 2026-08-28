@@ -67,6 +67,16 @@ Adding an item, updating quantity, and removing an item are interactions rather 
 - Checkout
 - Authentication
 
+## 8.1 Backend implementation status
+
+- All four `CRT` endpoints are implemented and require an access token.
+- Reads return an empty cart without creating a database row.
+- Mutations are owner-scoped, validate current product visibility and stock, and return the complete
+  recalculated cart.
+- Cart-item quantities, line totals, subtotals, and the profile cart counter are derived from current
+  cart contents and catalog prices.
+- The `V6__create_cart_and_wishlist.sql` migration is applied; wishlist APIs remain planned.
+
 ## 9. Acceptance Criteria
 
 - Adding an eligible product produces clear feedback and updates the cart state.

@@ -13,6 +13,7 @@ import com.setec.ecommerce.shared.domain.User;
 import com.setec.ecommerce.shared.exception.BusinessException;
 import com.setec.ecommerce.shared.helper.CurrentUserResolver;
 import com.setec.ecommerce.shared.properties.JwtProperties;
+import com.setec.ecommerce.shared.repository.CartItemRepository;
 import com.setec.ecommerce.shared.repository.UserRepository;
 import com.setec.ecommerce.shared.security.JwtClaims;
 import com.setec.ecommerce.shared.security.JwtTokenProvider;
@@ -36,6 +37,7 @@ public class AuthService {
   private final JwtTokenProvider tokenProvider;
   private final JwtProperties jwtProperties;
   private final CurrentUserResolver currentUserResolver;
+  private final CartItemRepository cartItemRepository;
   private final AuthMapper authMapper;
 
   @Transactional
@@ -101,7 +103,9 @@ public class AuthService {
 
   @Transactional(readOnly = true)
   public CurrentUserResponse me() {
-    return authMapper.toCurrentUserResponse(currentUserResolver.require());
+    User user = currentUserResolver.require();
+    return authMapper.toCurrentUserResponse(
+        user, cartItemRepository.sumQuantityByUserId(user.getId()));
   }
 
   @Transactional(readOnly = true)

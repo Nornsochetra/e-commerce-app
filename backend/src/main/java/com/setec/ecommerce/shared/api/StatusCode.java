@@ -36,7 +36,11 @@ public enum StatusCode {
       HttpStatus.UNAUTHORIZED, ErrorType.AUTHENTICATION, "Refresh token is invalid"),
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorType.NOT_FOUND, "User was not found"),
   CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorType.NOT_FOUND, "Category was not found"),
-  PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorType.NOT_FOUND, "Product was not found");
+  PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorType.NOT_FOUND, "Product was not found"),
+  CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorType.NOT_FOUND, "Cart item was not found"),
+  PRODUCT_OUT_OF_STOCK(HttpStatus.CONFLICT, ErrorType.CONFLICT, "Product is out of stock"),
+  INSUFFICIENT_STOCK(
+      HttpStatus.CONFLICT, ErrorType.CONFLICT, "Requested quantity exceeds available stock");
 
   private final HttpStatus httpStatus;
   private final ErrorType errorType;

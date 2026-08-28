@@ -16,6 +16,15 @@ public class CurrentUserResolver {
 
   @Transactional(readOnly = true)
   public User require() {
+    return resolve(false);
+  }
+
+  @Transactional
+  public User requireForUpdate() {
+    return resolve(true);
+  }
+
+  private User resolve(boolean lock) {
     final Long userId;
     try {
       userId = Long.valueOf(authHelper.currentUserId());
@@ -23,8 +32,7 @@ public class CurrentUserResolver {
       throw new BusinessException(StatusCode.UNAUTHORIZED);
     }
     User user =
-        userRepository
-            .findById(userId)
+        (lock ? userRepository.findByIdForUpdate(userId) : userRepository.findById(userId))
             .orElseThrow(() -> new BusinessException(StatusCode.USER_NOT_FOUND));
     if (!user.isActive()) {
       throw new BusinessException(StatusCode.ACCOUNT_DISABLED);

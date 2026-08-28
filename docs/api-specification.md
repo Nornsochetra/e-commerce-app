@@ -14,9 +14,9 @@ errors, authentication, enum spelling, pagination, money, and timestamps—is de
 [API conventions](api-convention.md). Database fields and ownership rules are defined in
 [Data model](data-model.md).
 
-> **Implementation boundary:** The backend currently implements `GET /health`, the complete `AUT`
-> authentication area, and shared envelope/security behavior. Every endpoint in the other feature
-> areas remains planned until its controller exists. “Approved” does not mean “implemented.”
+> **Implementation boundary:** The backend currently implements `HLT`, `AUT`, `USR`, `CAT`, and
+> `CRT`, together with shared envelope/security behavior. `WSH`, `ORD`, and `NTF` remain planned
+> until their controllers exist. “Approved” does not mean “implemented.”
 
 Every path is relative to `/api/v1`. Every endpoint has a stable `<AREA>-<NNNN>` ApiId.
 
@@ -53,15 +53,15 @@ Failure (`data` absent):
 | `HLT` | Service health | Infrastructure | Implemented |
 | `AUT` | Login, registration, recovery, token lifecycle | Splash and authentication | Implemented |
 | `USR` | Current-user profile | Profile and edit profile | Implemented |
-| `CAT` | Categories, products, search, filters | Home and catalog | Planned; contract approved |
-| `CRT` | Current cart and items | Shopping cart | Planned; contract approved |
+| `CAT` | Categories, products, search, filters | Home and catalog | Implemented |
+| `CRT` | Current cart and items | Shopping cart | Implemented |
 | `WSH` | Current wishlist | Wishlist | Planned; contract approved |
 | `ORD` | Checkout and order history | Checkout, confirmation, orders | Planned; contract approved |
 | `NTF` | In-app notification inbox | Notifications and unread badge | Planned; contract approved |
 
-The current security allow-list exposes health, auth entry routes, and development OpenAPI routes.
-When the catalog slice is implemented, categories and product reads also become public. Cart,
-wishlist, checkout, orders, profile, logout, and notifications remain authenticated and owner-scoped.
+The current security allow-list exposes health, auth entry routes, catalog reads, and development
+OpenAPI routes. Cart, wishlist, checkout, orders, profile, logout, and notifications remain
+authenticated and owner-scoped.
 
 ## 3. Endpoint inventory
 
@@ -311,8 +311,9 @@ timestamps, and the prototype navigation counts:
 }
 ```
 
-`memberSince` equals `createdAt`; the client derives initials from `name`. Until the order,
-wishlist, and cart sections are implemented, their counters return zero.
+`memberSince` equals `createdAt`; the client derives initials from `name`. The cart counter is the
+sum of current cart-item quantities. Order and wishlist counters remain zero until those sections
+are implemented.
 
 ### 4.3 `PATCH /me/profile` · `USR-0401`
 
@@ -671,12 +672,12 @@ the inbox is already in the target state. These counts let the prototype update 
 | `EMAIL_ALREADY_REGISTERED` | 409 | CONFLICT | Implemented with auth | The normalized email already belongs to an account. |
 | `INVALID_REFRESH_TOKEN` | 401 | AUTHENTICATION | Implemented with auth | Refresh token is malformed, expired, has the wrong type, or does not identify a current user. |
 | `USER_NOT_FOUND` | 404 | NOT_FOUND | Implemented with current identity | Current account no longer resolves. |
-| `PRODUCT_NOT_FOUND` | 404 | NOT_FOUND | Planned with catalog | Product is missing or not visible. |
-| `CATEGORY_NOT_FOUND` | 404 | NOT_FOUND | Planned with catalog | Category filter does not resolve to an active category. |
+| `PRODUCT_NOT_FOUND` | 404 | NOT_FOUND | Implemented with catalog | Product is missing or not visible. |
+| `CATEGORY_NOT_FOUND` | 404 | NOT_FOUND | Implemented with catalog | Category filter does not resolve to an active category. |
 | `CART_NOT_FOUND` | 404 | NOT_FOUND | Planned with cart | Current user has no resolvable cart. |
-| `CART_ITEM_NOT_FOUND` | 404 | NOT_FOUND | Planned with cart | Item is absent or belongs to another cart. |
-| `PRODUCT_OUT_OF_STOCK` | 409 | CONFLICT | Planned with cart | Available quantity is zero. |
-| `INSUFFICIENT_STOCK` | 409 | CONFLICT | Planned with cart/order | Requested quantity exceeds current availability. |
+| `CART_ITEM_NOT_FOUND` | 404 | NOT_FOUND | Implemented with cart | Item is absent or belongs to another cart. |
+| `PRODUCT_OUT_OF_STOCK` | 409 | CONFLICT | Implemented with cart | Available quantity is zero. |
+| `INSUFFICIENT_STOCK` | 409 | CONFLICT | Implemented with cart; reused by orders | Requested quantity exceeds current availability. |
 | `WISHLIST_ITEM_NOT_FOUND` | 404 | NOT_FOUND | Planned with wishlist | Product is not in the current user’s wishlist. |
 | `ORDER_NOT_FOUND` | 404 | NOT_FOUND | Planned with orders | Order is absent or belongs to another user. |
 | `CART_EMPTY` | 409 | CONFLICT | Planned with orders | Checkout was requested with no cart items. |

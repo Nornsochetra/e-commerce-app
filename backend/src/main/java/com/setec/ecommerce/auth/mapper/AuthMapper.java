@@ -13,9 +13,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class AuthMapper {
-  private static final CurrentUserCountsResponse EMPTY_COUNTS =
-      new CurrentUserCountsResponse(0, 0, 0);
-
   public User toUser(RegisterRequest request, String normalizedEmail, String passwordHash) {
     return User.builder()
         .name(request.name())
@@ -35,7 +32,7 @@ public class AuthMapper {
         user.getRole().name().toLowerCase(Locale.ROOT));
   }
 
-  public CurrentUserResponse toCurrentUserResponse(User user) {
+  public CurrentUserResponse toCurrentUserResponse(User user, long cartItemCount) {
     return new CurrentUserResponse(
         user.getUuid(),
         user.getName(),
@@ -43,7 +40,7 @@ public class AuthMapper {
         user.getPhone(),
         user.getRole().name().toLowerCase(Locale.ROOT),
         user.getCreatedAt(),
-        EMPTY_COUNTS,
+        new CurrentUserCountsResponse(0, 0, cartItemCount),
         user.getCreatedAt(),
         user.getUpdatedAt());
   }

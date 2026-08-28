@@ -91,7 +91,8 @@ authentication.
 - V1 prices are USD current catalog prices.
 - Search is a case-insensitive product-name contains match.
 - Filters are category and in-stock availability.
-- Supported sorts are newest, name ascending, price ascending, and price descending.
+- Supported sorts are featured (default), price ascending, price descending, rating descending,
+  name ascending, and newest.
 - Product lists are zero-based pages with default size 20 and maximum size 100.
 
 ## 7. UI States
@@ -111,6 +112,14 @@ authentication.
 - Product API specification
 - Shopping cart
 - Wishlist
+
+## 8.1 Backend implementation status
+
+- Active categories, product search/filtering, and product details are implemented.
+- Catalog reads are public and expose only active products in active categories.
+- Pagination, approved sorts, stock filtering, descriptions, ratings, images, and badges follow the
+  API contract.
+- The `V5__create_catalog.sql` migration is applied.
 
 ## 9. Acceptance Criteria
 
