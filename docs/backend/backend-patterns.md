@@ -222,11 +222,13 @@ src/main/resources/
 ├── logback-spring.xml
 └── db/migration/
     ├── V1__create_users.sql
-    ├── V2__create_refresh_sessions.sql
-    ├── V3__create_catalog.sql
-    ├── V4__create_cart_and_wishlist.sql
-    ├── V5__create_orders.sql
-    └── V6__create_notifications.sql
+    ├── V2__seed_users.sql
+    ├── V3__add_user_public_fields.sql
+    ├── V4__add_user_token_version.sql
+    ├── V5__create_catalog.sql
+    ├── V6__create_cart_and_wishlist.sql
+    ├── V7__create_orders.sql
+    └── V8__create_notifications.sql
 ```
 
 Applied migrations are immutable. Add a new migration for every later schema change and update

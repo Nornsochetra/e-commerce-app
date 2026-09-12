@@ -38,6 +38,10 @@ public enum StatusCode {
   CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorType.NOT_FOUND, "Category was not found"),
   PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorType.NOT_FOUND, "Product was not found"),
   CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorType.NOT_FOUND, "Cart item was not found"),
+  WISHLIST_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorType.NOT_FOUND, "Wishlist item was not found"),
+  ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorType.NOT_FOUND, "Order was not found"),
+  CART_EMPTY(HttpStatus.CONFLICT, ErrorType.CONFLICT, "Cart is empty"),
+  CHECKOUT_INVALID(HttpStatus.BAD_REQUEST, ErrorType.VALIDATION, "Checkout information is invalid"),
   PRODUCT_OUT_OF_STOCK(HttpStatus.CONFLICT, ErrorType.CONFLICT, "Product is out of stock"),
   INSUFFICIENT_STOCK(
       HttpStatus.CONFLICT, ErrorType.CONFLICT, "Requested quantity exceeds available stock");

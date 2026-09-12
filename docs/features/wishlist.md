@@ -55,6 +55,16 @@ The wishlist feature allows users to mark products as favorites and review those
 - Authentication
 - Wishlist API specification
 
+## 8.1 Backend implementation status
+
+- All three `WSH` endpoints are implemented and require an access token.
+- Wishlist reads are owner-scoped, paginated, and ordered by newest saved item with a stable id
+  tie-breaker.
+- Saving an active visible product returns 201 when new and 200 when already saved.
+- Previously saved unavailable products remain visible with current catalog values.
+- The profile wishlist counter is derived from the current user's saved products.
+- Persistence uses the `wishlist_items` table already applied in `V6__create_cart_and_wishlist.sql`.
+
 ## 9. Acceptance Criteria
 
 - Favorite controls visibly reflect the current mock state.

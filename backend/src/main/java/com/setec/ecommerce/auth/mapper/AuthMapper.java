@@ -32,7 +32,8 @@ public class AuthMapper {
         user.getRole().name().toLowerCase(Locale.ROOT));
   }
 
-  public CurrentUserResponse toCurrentUserResponse(User user, long cartItemCount) {
+  public CurrentUserResponse toCurrentUserResponse(
+      User user, long orderCount, long wishlistItemCount, long cartItemCount) {
     return new CurrentUserResponse(
         user.getUuid(),
         user.getName(),
@@ -40,7 +41,7 @@ public class AuthMapper {
         user.getPhone(),
         user.getRole().name().toLowerCase(Locale.ROOT),
         user.getCreatedAt(),
-        new CurrentUserCountsResponse(0, 0, cartItemCount),
+        new CurrentUserCountsResponse(orderCount, wishlistItemCount, cartItemCount),
         user.getCreatedAt(),
         user.getUpdatedAt());
   }

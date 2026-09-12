@@ -27,13 +27,31 @@
       const [message, setMessage] = useState("");
       const [email, setEmail] = useState("");
       const [password, setPassword] = useState("");
+      const [showPassword, setShowPassword] = useState(false);
       useEffect(() => { if (screen === "splash") { const id = setTimeout(() => setScreen("login"), 1200); return () => clearTimeout(id); } }, [screen]);
       const submit = (event, text, destination) => {
         event.preventDefault(); setLoading(true); setMessage("");
         setTimeout(() => { setLoading(false); setMessage(text); if (destination) setTimeout(() => location.href = destination, 500); }, 650);
       };
+      const register = event => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        if (form.get("password") !== form.get("confirmation")) {
+          setMessage("Passwords do not match.");
+          return;
+        }
+        submit(event, "Account created — redirecting", "product.html");
+      };
+      const login = event => {
+        event.preventDefault();
+        if (email !== "demo@mercato.app" || password !== "Demo123!") {
+          setMessage("Use the demo credentials shown above, or continue as a guest.");
+          return;
+        }
+        submit(event, "Signed in successfully", "product.html");
+      };
 
-      if (screen === "splash") return <div className="relative grid min-h-screen overflow-hidden bg-gradient-to-b from-white to-emerald-50 place-items-center text-slate-950"><div className="absolute -right-24 -top-24 h-80 w-80 rounded-full border border-white/10"></div><div className="absolute -bottom-32 -left-24 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl"></div>
+      if (screen === "splash") return <div className="relative grid min-h-screen overflow-hidden bg-gradient-to-b from-white to-emerald-50 place-items-center text-slate-950"><button onClick={() => setScreen("login")} className="absolute right-5 top-5 z-10 min-h-11 rounded-xl px-4 text-sm font-bold text-slate-500">Skip</button><div className="absolute -right-24 -top-24 h-80 w-80 rounded-full border border-white/10"></div><div className="absolute -bottom-32 -left-24 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl"></div>
         <div className="relative text-center"><div className="mx-auto grid h-28 w-28 place-items-center rounded-[2.4rem] border border-emerald-600 bg-emerald-700 text-5xl font-extrabold text-white shadow-2xl shadow-emerald-700/30">M</div><h1 className="mt-7 text-4xl font-extrabold tracking-tight">Mercato</h1><p className="mt-2 text-sm text-slate-500">Thoughtful products, simply delivered.</p><div className="mx-auto mt-12 h-1 w-24 overflow-hidden rounded-full bg-emerald-100"><div className="h-full w-2/3 animate-pulse rounded-full bg-emerald-500"></div></div></div>
       </div>;
 
@@ -49,9 +67,9 @@
             </div>
             <p className="mt-3 text-xs leading-5 text-emerald-700/80">Prototype credentials only. No account or real authentication is involved.</p>
           </div>
-          <form className="mt-6 space-y-4" onSubmit={e => submit(e, "Signed in successfully", "product.html")}>
+          <form className="mt-6 space-y-4" onSubmit={login}>
             <label className="block text-sm font-semibold">Email<input className={fieldClass + " mt-2"} required type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} /></label>
-            <label className="block text-sm font-semibold">Password<input className={fieldClass + " mt-2"} required minLength="6" type="password" placeholder="At least 6 characters" value={password} onChange={e => setPassword(e.target.value)} /></label>
+            <label className="block text-sm font-semibold">Password<div className="relative mt-2"><input className={fieldClass + " pr-20"} required minLength="6" type={showPassword ? "text" : "password"} placeholder="At least 6 characters" value={password} onChange={e => setPassword(e.target.value)} /><button type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(value => !value)} className="absolute inset-y-0 right-3 text-xs font-bold text-emerald-700">{showPassword ? "Hide" : "Show"}</button></div></label>
             <div className="text-right"><button type="button" onClick={() => {setScreen("forgot");setMessage("")}} className="text-sm font-bold text-emerald-600">Forgot password?</button></div>
             {message && <p className="rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">{message}</p>}
             <button disabled={loading} className="w-full rounded-2xl bg-emerald-700 py-4 font-extrabold text-white shadow-xl shadow-emerald-700/25 transition hover:bg-emerald-800 active:scale-[.98] disabled:opacity-60">{loading ? "Signing in…" : "Sign in →"}</button>
@@ -62,11 +80,11 @@
 
         {screen === "register" && <section className="my-auto py-8">
           <button onClick={() => setScreen("login")} className="mb-6 text-sm font-bold text-slate-500">← Back to sign in</button><h1 className="text-3xl font-black">Create your account</h1><p className="mt-2 text-sm text-slate-500">A quick mock registration to preview the flow.</p>
-          <form className="mt-7 space-y-4" onSubmit={e => submit(e, "Account created — redirecting", "product.html")}>
-            <input className={fieldClass} required placeholder="Full name" />
-            <input className={fieldClass} required type="email" placeholder="Email address" />
-            <input className={fieldClass} required minLength="6" type="password" placeholder="Password" />
-            <input className={fieldClass} required minLength="6" type="password" placeholder="Confirm password" />
+          <form className="mt-7 space-y-4" onSubmit={register}>
+            <label className="block text-sm font-semibold">Full name<input className={fieldClass + " mt-2"} required autoComplete="name" placeholder="Alex Morgan" /></label>
+            <label className="block text-sm font-semibold">Email address<input className={fieldClass + " mt-2"} required type="email" autoComplete="email" placeholder="you@example.com" /></label>
+            <label className="block text-sm font-semibold">Password<input name="password" className={fieldClass + " mt-2"} required minLength="6" type="password" autoComplete="new-password" placeholder="At least 6 characters" /></label>
+            <label className="block text-sm font-semibold">Confirm password<input name="confirmation" className={fieldClass + " mt-2"} required minLength="6" type="password" autoComplete="new-password" placeholder="Repeat your password" /></label>
             {message && <p className="rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">{message}</p>}
             <button disabled={loading} className="w-full rounded-2xl bg-emerald-500 py-4 font-bold text-white disabled:opacity-60">{loading ? "Creating account…" : "Create account"}</button>
           </form>
@@ -74,7 +92,7 @@
 
         {screen === "forgot" && <section className="my-auto py-10">
           <button onClick={() => {setScreen("login");setMessage("")}} className="mb-7 text-sm font-bold text-slate-500">← Back to sign in</button><div className="grid h-14 w-14 place-items-center rounded-2xl bg-amber-100 text-2xl">✉</div><h1 className="mt-5 text-3xl font-black">Reset your password</h1><p className="mt-2 text-sm leading-6 text-slate-500">Enter your email and we’ll show a mock recovery confirmation.</p>
-          <form className="mt-7 space-y-4" onSubmit={e => submit(e, "Recovery instructions sent. Check your inbox.")}><input className={fieldClass} required type="email" placeholder="Email address" />{message && <p className="rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">{message}</p>}<button disabled={loading} className="w-full rounded-2xl bg-emerald-700 py-4 font-bold text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 disabled:opacity-60">{loading ? "Sending…" : "Send instructions"}</button></form>
+          <form className="mt-7 space-y-4" onSubmit={e => submit(e, "Recovery instructions sent. Check your inbox.")}><label className="block text-sm font-semibold">Email address<input className={fieldClass + " mt-2"} required type="email" autoComplete="email" placeholder="you@example.com" /></label>{message && <p className="rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-700" role="status">{message}</p>}<button disabled={loading} className="w-full rounded-2xl bg-emerald-700 py-4 font-bold text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 disabled:opacity-60">{loading ? "Sending…" : "Send instructions"}</button></form>
         </section>}
         <p className="text-center text-xs text-slate-400">Prototype only — do not enter real credentials.</p>
       </main>;

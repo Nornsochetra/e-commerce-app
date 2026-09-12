@@ -19,8 +19,7 @@ Companion documents:
 - [API specification](api-specification.md)
 - [Backend initialization blueprint](backend/backend-init-blueprint.md)
 
-> **Implementation boundary:** Migrations V1 through V6 are currently applied. V7 and V8 remain
-> planned.
+> **Implementation boundary:** Migrations V1 through V7 are currently applied. V8 remains planned.
 
 ## 2. Conventions
 
@@ -42,8 +41,8 @@ Companion documents:
 |---|---|---|
 | Identity | `users` | Implemented in `V1`, seeded by `V2`, and extended by `V3` and `V4`. |
 | Catalog | `categories`, `products`, `product_badges` | Implemented in `V5`. |
-| Shopping | `carts`, `cart_items`, `wishlist_items` | Schema applied in `V6`; cart APIs implemented, wishlist APIs planned. |
-| Orders | `orders`, `order_items` | Planned `V7`. |
+| Shopping | `carts`, `cart_items`, `wishlist_items` | Schema applied in `V6`; cart and wishlist APIs implemented. |
+| Orders | `orders`, `order_items` | Implemented in `V7`. |
 | Notifications | `notifications` | Planned `V8`. |
 
 Deferred entities: product variants, reviews, saved addresses, inventory movements, promotions,
@@ -179,7 +178,7 @@ erDiagram
 
 ## 5. DDL
 
-The first six migrations are applied. Later blocks are the approved target DDL and retain their
+The first seven migrations are applied. The later block is the approved target DDL and retains its
 planned sequence so implementation does not collide with existing migration names.
 
 ### 5.1 Applied identity schema — `V1` and `V2`
@@ -368,7 +367,7 @@ CREATE INDEX ix_wishlist_items_user_created
 Cart `lineTotal`, `subtotal`, and `itemCount` are calculated from the cart items and current product
 prices; they are not stored.
 
-### 5.6 Orders — planned `V7`
+### 5.6 Orders — applied `V7`
 
 ```sql
 -- V7__create_orders.sql
@@ -540,7 +539,7 @@ Card payment, cancellation, returns, push delivery, and notification preferences
 | `V4__add_user_token_version.sql` | Adds account-wide access/refresh token revocation. | Applied |
 | `V5__create_catalog.sql` | Creates `categories`, `products`, `product_badges`, and featured ordering. | Applied |
 | `V6__create_cart_and_wishlist.sql` | Creates `carts`, `cart_items`, `wishlist_items`. | Applied |
-| `V7__create_orders.sql` | Creates orders/items with delivery and payment snapshots. | Planned |
+| `V7__create_orders.sql` | Creates orders/items with delivery and payment snapshots. | Applied |
 | `V8__create_notifications.sql` | Creates `notifications`. | Planned |
 
 ## 9. Deferred post-v1 decisions

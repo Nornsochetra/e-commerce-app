@@ -8,7 +8,9 @@ import com.setec.ecommerce.shared.domain.User;
 import com.setec.ecommerce.shared.exception.BusinessException;
 import com.setec.ecommerce.shared.helper.CurrentUserResolver;
 import com.setec.ecommerce.shared.repository.CartItemRepository;
+import com.setec.ecommerce.shared.repository.OrderRepository;
 import com.setec.ecommerce.shared.repository.UserRepository;
+import com.setec.ecommerce.shared.repository.WishlistItemRepository;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -21,6 +23,8 @@ public class ProfileService {
   private final CurrentUserResolver currentUserResolver;
   private final UserRepository userRepository;
   private final CartItemRepository cartItemRepository;
+  private final OrderRepository orderRepository;
+  private final WishlistItemRepository wishlistItemRepository;
   private final AuthMapper authMapper;
 
   @Transactional
@@ -48,7 +52,10 @@ public class ProfileService {
     try {
       User saved = userRepository.saveAndFlush(user);
       return authMapper.toCurrentUserResponse(
-          saved, cartItemRepository.sumQuantityByUserId(saved.getId()));
+          saved,
+          orderRepository.countByUserId(saved.getId()),
+          wishlistItemRepository.countByUserId(saved.getId()),
+          cartItemRepository.sumQuantityByUserId(saved.getId()));
     } catch (DataIntegrityViolationException exception) {
       throw new BusinessException(StatusCode.EMAIL_ALREADY_REGISTERED);
     }

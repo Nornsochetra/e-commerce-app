@@ -14,7 +14,9 @@ import com.setec.ecommerce.shared.exception.BusinessException;
 import com.setec.ecommerce.shared.helper.CurrentUserResolver;
 import com.setec.ecommerce.shared.properties.JwtProperties;
 import com.setec.ecommerce.shared.repository.CartItemRepository;
+import com.setec.ecommerce.shared.repository.OrderRepository;
 import com.setec.ecommerce.shared.repository.UserRepository;
+import com.setec.ecommerce.shared.repository.WishlistItemRepository;
 import com.setec.ecommerce.shared.security.JwtClaims;
 import com.setec.ecommerce.shared.security.JwtTokenProvider;
 import com.setec.ecommerce.shared.security.TokenType;
@@ -38,6 +40,8 @@ public class AuthService {
   private final JwtProperties jwtProperties;
   private final CurrentUserResolver currentUserResolver;
   private final CartItemRepository cartItemRepository;
+  private final OrderRepository orderRepository;
+  private final WishlistItemRepository wishlistItemRepository;
   private final AuthMapper authMapper;
 
   @Transactional
@@ -105,7 +109,10 @@ public class AuthService {
   public CurrentUserResponse me() {
     User user = currentUserResolver.require();
     return authMapper.toCurrentUserResponse(
-        user, cartItemRepository.sumQuantityByUserId(user.getId()));
+        user,
+        orderRepository.countByUserId(user.getId()),
+        wishlistItemRepository.countByUserId(user.getId()),
+        cartItemRepository.sumQuantityByUserId(user.getId()));
   }
 
   @Transactional(readOnly = true)

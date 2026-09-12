@@ -59,4 +59,9 @@ public class Cart extends BaseEntity {
   public void touch() {
     setUpdatedAt(Instant.now());
   }
+
+  public void clearItems() {
+    items.forEach(item -> item.setCart(null));
+    items.clear();
+  }
 }

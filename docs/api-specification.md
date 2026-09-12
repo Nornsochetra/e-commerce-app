@@ -14,9 +14,9 @@ errors, authentication, enum spelling, pagination, money, and timestamps—is de
 [API conventions](api-convention.md). Database fields and ownership rules are defined in
 [Data model](data-model.md).
 
-> **Implementation boundary:** The backend currently implements `HLT`, `AUT`, `USR`, `CAT`, and
-> `CRT`, together with shared envelope/security behavior. `WSH`, `ORD`, and `NTF` remain planned
-> until their controllers exist. “Approved” does not mean “implemented.”
+> **Implementation boundary:** The backend currently implements `HLT`, `AUT`, `USR`, `CAT`, `CRT`,
+> `WSH`, and `ORD`, together with shared envelope/security behavior. `NTF` remains planned until its
+> controller exists. “Approved” does not mean “implemented.”
 
 Every path is relative to `/api/v1`. Every endpoint has a stable `<AREA>-<NNNN>` ApiId.
 
@@ -55,8 +55,8 @@ Failure (`data` absent):
 | `USR` | Current-user profile | Profile and edit profile | Implemented |
 | `CAT` | Categories, products, search, filters | Home and catalog | Implemented |
 | `CRT` | Current cart and items | Shopping cart | Implemented |
-| `WSH` | Current wishlist | Wishlist | Planned; contract approved |
-| `ORD` | Checkout and order history | Checkout, confirmation, orders | Planned; contract approved |
+| `WSH` | Current wishlist | Wishlist | Implemented |
+| `ORD` | Checkout and order history | Checkout, confirmation, orders | Implemented |
 | `NTF` | In-app notification inbox | Notifications and unread badge | Planned; contract approved |
 
 The current security allow-list exposes health, auth entry routes, catalog reads, and development
@@ -312,8 +312,8 @@ timestamps, and the prototype navigation counts:
 ```
 
 `memberSince` equals `createdAt`; the client derives initials from `name`. The cart counter is the
-sum of current cart-item quantities. Order and wishlist counters remain zero until those sections
-are implemented.
+sum of current cart-item quantities, the wishlist counter is the number of saved products, and the
+order counter is the number of placed orders.
 
 ### 4.3 `PATCH /me/profile` · `USR-0401`
 
@@ -674,14 +674,14 @@ the inbox is already in the target state. These counts let the prototype update 
 | `USER_NOT_FOUND` | 404 | NOT_FOUND | Implemented with current identity | Current account no longer resolves. |
 | `PRODUCT_NOT_FOUND` | 404 | NOT_FOUND | Implemented with catalog | Product is missing or not visible. |
 | `CATEGORY_NOT_FOUND` | 404 | NOT_FOUND | Implemented with catalog | Category filter does not resolve to an active category. |
-| `CART_NOT_FOUND` | 404 | NOT_FOUND | Planned with cart | Current user has no resolvable cart. |
+| `CART_NOT_FOUND` | 404 | NOT_FOUND | Reserved; not raised in v1 | A missing current cart is represented by an empty cart response. |
 | `CART_ITEM_NOT_FOUND` | 404 | NOT_FOUND | Implemented with cart | Item is absent or belongs to another cart. |
 | `PRODUCT_OUT_OF_STOCK` | 409 | CONFLICT | Implemented with cart | Available quantity is zero. |
-| `INSUFFICIENT_STOCK` | 409 | CONFLICT | Implemented with cart; reused by orders | Requested quantity exceeds current availability. |
-| `WISHLIST_ITEM_NOT_FOUND` | 404 | NOT_FOUND | Planned with wishlist | Product is not in the current user’s wishlist. |
-| `ORDER_NOT_FOUND` | 404 | NOT_FOUND | Planned with orders | Order is absent or belongs to another user. |
-| `CART_EMPTY` | 409 | CONFLICT | Planned with orders | Checkout was requested with no cart items. |
-| `CHECKOUT_INVALID` | 400 | VALIDATION | Planned with orders | Delivery or payment input is incomplete/unsupported. |
+| `INSUFFICIENT_STOCK` | 409 | CONFLICT | Implemented with cart and orders | Requested quantity exceeds current availability. |
+| `WISHLIST_ITEM_NOT_FOUND` | 404 | NOT_FOUND | Implemented with wishlist | Product is not in the current user’s wishlist. |
+| `ORDER_NOT_FOUND` | 404 | NOT_FOUND | Implemented with orders | Order is absent or belongs to another user. |
+| `CART_EMPTY` | 409 | CONFLICT | Implemented with orders | Checkout was requested with no cart items. |
+| `CHECKOUT_INVALID` | 400 | VALIDATION | Implemented with orders | Delivery or payment input is incomplete/unsupported. |
 | `NOTIFICATION_NOT_FOUND` | 404 | NOT_FOUND | Planned with notifications | Notification is absent, cleared, or belongs to another user. |
 
 ## 6. Template for a new endpoint

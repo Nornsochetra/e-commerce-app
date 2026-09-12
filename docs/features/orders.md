@@ -102,6 +102,17 @@ The orders feature supports the customer journey from reviewing checkout informa
 - User profile data
 - Order API specification
 
+## 9.1 Backend implementation status
+
+- Checkout preview, order placement, history, and detail endpoints are implemented and authenticated.
+- Placement locks stock in stable product-id order, revalidates availability, stores immutable item
+  and delivery snapshots, decrements inventory, and clears the cart in one transaction.
+- `Idempotency-Key` replay returns the original order for compatible input and `CONFLICT` for changed
+  checkout input.
+- History is owner-scoped, newest-first, paginated, and optionally filtered by order status.
+- The profile order counter is derived from placed orders.
+- The `V7__create_orders.sql` migration is applied.
+
 ## 10. Acceptance Criteria
 
 - The user can navigate from an eligible cart to checkout.
