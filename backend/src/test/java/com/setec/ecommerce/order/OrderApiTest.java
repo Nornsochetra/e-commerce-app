@@ -19,6 +19,7 @@ import com.setec.ecommerce.shared.enums.Role;
 import com.setec.ecommerce.shared.repository.CartItemRepository;
 import com.setec.ecommerce.shared.repository.CartRepository;
 import com.setec.ecommerce.shared.repository.CategoryRepository;
+import com.setec.ecommerce.shared.repository.NotificationRepository;
 import com.setec.ecommerce.shared.repository.OrderItemRepository;
 import com.setec.ecommerce.shared.repository.OrderRepository;
 import com.setec.ecommerce.shared.repository.ProductRepository;
@@ -66,10 +67,12 @@ class OrderApiTest {
   @Autowired private WishlistItemRepository wishlistItemRepository;
   @Autowired private OrderRepository orderRepository;
   @Autowired private OrderItemRepository orderItemRepository;
+  @Autowired private NotificationRepository notificationRepository;
   @Autowired private JwtTokenProvider tokenProvider;
 
   @BeforeEach
   void cleanDatabase() {
+    notificationRepository.deleteAll();
     orderItemRepository.deleteAll();
     orderRepository.deleteAll();
     wishlistItemRepository.deleteAll();
@@ -194,6 +197,7 @@ class OrderApiTest {
 
     org.assertj.core.api.Assertions.assertThat(orderRepository.count()).isEqualTo(1);
     org.assertj.core.api.Assertions.assertThat(orderItemRepository.count()).isEqualTo(1);
+    org.assertj.core.api.Assertions.assertThat(notificationRepository.count()).isEqualTo(1);
     org.assertj.core.api.Assertions.assertThat(cartItemRepository.count()).isZero();
     org.assertj.core.api.Assertions.assertThat(
             productRepository.findById(product.getId()).orElseThrow().getAvailableQuantity())
@@ -223,6 +227,7 @@ class OrderApiTest {
         .andExpect(jsonPath("$.status.code").value("CONFLICT"));
 
     org.assertj.core.api.Assertions.assertThat(orderRepository.count()).isEqualTo(1);
+    org.assertj.core.api.Assertions.assertThat(notificationRepository.count()).isEqualTo(1);
     org.assertj.core.api.Assertions.assertThat(
             productRepository.findById(product.getId()).orElseThrow().getAvailableQuantity())
         .isEqualTo(3);

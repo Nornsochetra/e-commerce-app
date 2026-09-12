@@ -110,6 +110,8 @@ The orders feature supports the customer journey from reviewing checkout informa
 - `Idempotency-Key` replay returns the original order for compatible input and `CONFLICT` for changed
   checkout input.
 - History is owner-scoped, newest-first, paginated, and optionally filtered by order status.
+- A newly placed order creates one unread order notification in the same transaction; an
+  idempotency replay does not create another notification.
 - The profile order counter is derived from placed orders.
 - The `V7__create_orders.sql` migration is applied.
 

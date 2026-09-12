@@ -19,7 +19,7 @@ Companion documents:
 - [API specification](api-specification.md)
 - [Backend initialization blueprint](backend/backend-init-blueprint.md)
 
-> **Implementation boundary:** Migrations V1 through V7 are currently applied. V8 remains planned.
+> **Implementation boundary:** Migrations V1 through V8 are currently applied.
 
 ## 2. Conventions
 
@@ -43,7 +43,7 @@ Companion documents:
 | Catalog | `categories`, `products`, `product_badges` | Implemented in `V5`. |
 | Shopping | `carts`, `cart_items`, `wishlist_items` | Schema applied in `V6`; cart and wishlist APIs implemented. |
 | Orders | `orders`, `order_items` | Implemented in `V7`. |
-| Notifications | `notifications` | Planned `V8`. |
+| Notifications | `notifications` | Implemented in `V8`. |
 
 Deferred entities: product variants, reviews, saved addresses, inventory movements, promotions,
 payments, shipments, returns, notification preferences, and audit entries.
@@ -435,7 +435,7 @@ CREATE INDEX ix_order_items_order
 `order_items` stores product and price snapshots. Product changes or deletion must not rewrite an
 existing order.
 
-### 5.7 Notifications — planned `V8`
+### 5.7 Notifications — applied `V8`
 
 ```sql
 -- V8__create_notifications.sql
@@ -540,7 +540,7 @@ Card payment, cancellation, returns, push delivery, and notification preferences
 | `V5__create_catalog.sql` | Creates `categories`, `products`, `product_badges`, and featured ordering. | Applied |
 | `V6__create_cart_and_wishlist.sql` | Creates `carts`, `cart_items`, `wishlist_items`. | Applied |
 | `V7__create_orders.sql` | Creates orders/items with delivery and payment snapshots. | Applied |
-| `V8__create_notifications.sql` | Creates `notifications`. | Planned |
+| `V8__create_notifications.sql` | Creates `notifications`. | Applied |
 
 ## 9. Deferred post-v1 decisions
 

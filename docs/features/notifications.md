@@ -66,6 +66,19 @@ Notifications provide an authenticated user with an in-app inbox for order and s
 - Product catalog for stock and offer updates
 - Notification API specification
 
+## 8.1 Backend implementation status
+
+- The inbox, unread-count, mark-read, mark-all-read, and clear-all endpoints are implemented and
+  authenticated.
+- All reads and mutations are owner-scoped; missing, cleared, and other-user notification IDs share
+  the `NOTIFICATION_NOT_FOUND` response.
+- Read and bulk operations are idempotent, while clear-all records `cleared_at` without deleting
+  notification history.
+- Lists are newest-first, paginated, and support the approved `all` and `unread` filters.
+- A successful new order creates one unread order notification in the checkout transaction;
+  idempotency replay does not create a duplicate.
+- The `V8__create_notifications.sql` migration is applied.
+
 ## 9. Acceptance criteria
 
 - The notification indicator opens the inbox.

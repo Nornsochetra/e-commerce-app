@@ -15,8 +15,7 @@ errors, authentication, enum spelling, pagination, money, and timestamps—is de
 [Data model](data-model.md).
 
 > **Implementation boundary:** The backend currently implements `HLT`, `AUT`, `USR`, `CAT`, `CRT`,
-> `WSH`, and `ORD`, together with shared envelope/security behavior. `NTF` remains planned until its
-> controller exists. “Approved” does not mean “implemented.”
+> `WSH`, `ORD`, and `NTF`, together with shared envelope/security behavior.
 
 Every path is relative to `/api/v1`. Every endpoint has a stable `<AREA>-<NNNN>` ApiId.
 
@@ -57,7 +56,7 @@ Failure (`data` absent):
 | `CRT` | Current cart and items | Shopping cart | Implemented |
 | `WSH` | Current wishlist | Wishlist | Implemented |
 | `ORD` | Checkout and order history | Checkout, confirmation, orders | Implemented |
-| `NTF` | In-app notification inbox | Notifications and unread badge | Planned; contract approved |
+| `NTF` | In-app notification inbox | Notifications and unread badge | Implemented |
 
 The current security allow-list exposes health, auth entry routes, catalog reads, and development
 OpenAPI routes. Cart, wishlist, checkout, orders, profile, logout, and notifications remain
@@ -682,7 +681,7 @@ the inbox is already in the target state. These counts let the prototype update 
 | `ORDER_NOT_FOUND` | 404 | NOT_FOUND | Implemented with orders | Order is absent or belongs to another user. |
 | `CART_EMPTY` | 409 | CONFLICT | Implemented with orders | Checkout was requested with no cart items. |
 | `CHECKOUT_INVALID` | 400 | VALIDATION | Implemented with orders | Delivery or payment input is incomplete/unsupported. |
-| `NOTIFICATION_NOT_FOUND` | 404 | NOT_FOUND | Planned with notifications | Notification is absent, cleared, or belongs to another user. |
+| `NOTIFICATION_NOT_FOUND` | 404 | NOT_FOUND | Implemented with notifications | Notification is absent, cleared, or belongs to another user. |
 
 ## 6. Template for a new endpoint
 

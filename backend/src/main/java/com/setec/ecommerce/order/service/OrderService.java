@@ -9,15 +9,18 @@ import com.setec.ecommerce.shared.api.Pagination;
 import com.setec.ecommerce.shared.api.StatusCode;
 import com.setec.ecommerce.shared.domain.Cart;
 import com.setec.ecommerce.shared.domain.CartItem;
+import com.setec.ecommerce.shared.domain.Notification;
 import com.setec.ecommerce.shared.domain.Order;
 import com.setec.ecommerce.shared.domain.Product;
 import com.setec.ecommerce.shared.domain.User;
 import com.setec.ecommerce.shared.enums.DeliveryMethod;
+import com.setec.ecommerce.shared.enums.NotificationType;
 import com.setec.ecommerce.shared.enums.OrderStatus;
 import com.setec.ecommerce.shared.enums.PaymentMethod;
 import com.setec.ecommerce.shared.exception.BusinessException;
 import com.setec.ecommerce.shared.helper.CurrentUserResolver;
 import com.setec.ecommerce.shared.repository.CartRepository;
+import com.setec.ecommerce.shared.repository.NotificationRepository;
 import com.setec.ecommerce.shared.repository.OrderRepository;
 import com.setec.ecommerce.shared.repository.ProductRepository;
 import java.math.BigDecimal;
@@ -47,6 +50,7 @@ public class OrderService {
   private final CartRepository cartRepository;
   private final ProductRepository productRepository;
   private final OrderRepository orderRepository;
+  private final NotificationRepository notificationRepository;
   private final OrderMapper orderMapper;
 
   @Transactional(readOnly = true)
@@ -101,6 +105,13 @@ public class OrderService {
     cart.clearItems();
     cart.touch();
     orderRepository.save(order);
+    notificationRepository.save(
+        Notification.builder()
+            .user(user)
+            .type(NotificationType.ORDER)
+            .title("Order placed")
+            .message("Order #" + order.getReference() + " has been placed successfully.")
+            .build());
     cartRepository.saveAndFlush(cart);
     return orderMapper.toDetailResponse(order);
   }
