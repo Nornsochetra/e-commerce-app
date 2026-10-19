@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FAFAF8" />
+  <title>Mercato — Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/mercato.css" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11"></script>
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+  <!-- Shared data, navigation and UI components (ScreenLayout, AppHeader, TabBar, ProductCard, …) -->
+  <script src="assets/mercato.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Screen: Home -->
+<script type="text/babel">
+/* SCR-007 Home: search entry, featured carousel, categories, order update, trending grid, new arrivals. */
+const HOME_HERO_SLIDES = [
+  { eyebrow: 'The new everyday', title: ['Good design,', 'made useful.'], text: 'Considered pieces for work and weekends.', productIndex: 1, category: 'footwear', cta: 'Shop footwear' },
+  { eyebrow: 'Carry it well', title: ['Made to go', 'where you do.'], text: 'Dependable bags for busy days and light travel.', productIndex: 2, category: 'bags', cta: 'Shop bags' },
+  { eyebrow: 'Sound and focus', title: ['Turn down noise.', 'Keep the detail.'], text: 'Technology that earns its place in your day.', productIndex: 5, category: 'electronics', cta: 'Shop tech' },
+  { eyebrow: 'Finishing touch', title: ['Little things,', 'big difference.'], text: 'Timeless accessories for every season.', productIndex: 4, category: 'accessories', cta: 'Shop accessories' }
+];
+
+function HomeHero({ navigate }) {
+  const [i, setI] = React.useState(0);
+  React.useEffect(() => {
+    if (reduceMotion()) return;
+    const t = setTimeout(() => setI(n => (n + 1) % HOME_HERO_SLIDES.length), 6000);
+    return () => clearTimeout(t);
+  }, [i]);
+  const s = HOME_HERO_SLIDES[i], product = Mercato.products[s.productIndex];
+  return <section className="hero" aria-roledescription="carousel" aria-label="Featured collections">
+    <div key={i} className="hero-slide">
+      <div className="hero-copy">
+        <span className="t-eyebrow">{s.eyebrow}</span>
+        <h2>{s.title[0]}<br />{s.title[1]}</h2>
+        <p>{s.text}</p>
+        <button className="btn btn-primary btn-sm" onClick={() => navigate(Mercato.to.shop(s.category))}>{s.cta}</button>
+      </div>
+      <div className="hero-media"><ProductImage src={product.imageUrl} alt={product.name} /></div>
+    </div>
+    <div className="hero-dots" role="tablist" aria-label="Choose featured collection">
+      {HOME_HERO_SLIDES.map((x, n) => <button key={n} role="tab" aria-selected={i === n} aria-label={'Show slide ' + (n + 1) + ' of ' + HOME_HERO_SLIDES.length} onClick={() => setI(n)}><span /></button>)}
+    </div>
+  </section>;
+}
+
+function HomeScreen({ navigate }) {
+  const to = Mercato.to;
+  const loading = useLoading(350);
+  const user = Mercato.getUser();
+  const favorites = new Set(Mercato.getWishlist().map(p => p.id));
+  const trending = Mercato.products.filter(p => p.featured && p.availableQuantity > 0).slice(0, 4);
+  const fresh = Mercato.products.filter(p => p.badges.includes('NEW'));
+  const active = Mercato.getOrders().find(o => o.status !== 'delivered');
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+
+  return <ScreenLayout active="home" header={<header className="app-header wide"><Brand /><div className="slot end"><BellButton /></div></header>}>
+    <p className="t-meta">{greeting}, {user.name.split(' ')[0]}</p>
+    <h1 className="t-title mt-1">What are you shopping for today?</h1>
+
+    <div className="flex gap-2.5 mt-5">
+      <button className="search text-left" aria-label="Search products" onClick={() => navigate(to.shop('all', { focus: 'search' }))}>
+        <span className="lead"><Icon name="search" size={20} /></span>
+        <span className="input flex items-center faint" style={{ pointerEvents: 'none' }}>Search products</span>
+      </button>
+      <button className="circle-btn" style={{ width: 48, height: 48 }} aria-label="Filter products" onClick={() => navigate(to.shop('all', { filters: 'open' }))}><Icon name="sliders" size={20} /></button>
+    </div>
+
+    <div className="mt-5"><HomeHero navigate={navigate} /></div>
+
+    <div className="section-head"><h2 className="t-section">Categories</h2><a href={to.shop()} className="link">See all</a></div>
+    <div className="chips no-scrollbar" role="list">
+      {Mercato.categories.map(c => <a key={c.id} role="listitem" href={to.shop(c.slug)} className="chip"><Icon name={c.icon} size={18} />{c.name}</a>)}
+    </div>
+
+    {active && <a href={to.order(active.id)} className="banner mt-5">
+      <span className="icon-tile"><Icon name="truck" size={20} /></span>
+      <span className="flex-1 min-w-0"><span className="t-meta block">Order #{active.reference}</span><span className="t-head">{active.status === 'shipped' ? 'On the way to you' : 'Order ' + Mercato.label(active.status).toLowerCase()}</span></span>
+      <Icon name="chevron" size={18} className="faint" />
+    </a>}
+
+    <div className="section-head"><h2 className="t-section">Trending now</h2><a href={to.shop()} className="link">See all</a></div>
+    {loading ? <ProductGridSkeleton count={4} />
+      : <div className="grid-2">{trending.map(p => <ProductCard key={p.id} product={p} favorite={favorites.has(p.id)} onFavorite={Mercato.favoriteWithFeedback} onAdd={Mercato.addWithFeedback} />)}</div>}
+
+    <div className="section-head"><h2 className="t-section">New arrivals</h2></div>
+    {loading ? <ListSkeleton count={2} />
+      : fresh.map(p => <ListCard key={p.id} product={p} favorite={favorites.has(p.id)} onFavorite={Mercato.favoriteWithFeedback} onAdd={Mercato.addWithFeedback} />)}
+  </ScreenLayout>;
+}
+
+Mercato.mount(HomeScreen);
+</script>
+</body>
+</html>

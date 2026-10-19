@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FAFAF8" />
+  <title>Mercato — Welcome</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/mercato.css" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11"></script>
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+  <!-- Shared data, navigation and UI components (ScreenLayout, AppHeader, TabBar, ProductCard, …) -->
+  <script src="assets/mercato.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Screen: Splash — opened by index.html. Fades into Sign in (or Home when already signed in). -->
+<script type="text/babel">
+/* Splash: brand intro. A progress bar under the tagline fills while startup work (fonts) finishes, with a short
+   minimum display; then the screen fades into Sign in (or Home when signed in). Tap anywhere or Skip to continue. */
+function SplashScreen({ navigate }) {
+  const [progress, setProgress] = React.useState(0);
+  const [leaving, setLeaving] = React.useState(false);
+  const left = React.useRef(false);
+
+  const finish = () => {
+    if (left.current) return;
+    left.current = true;
+    setProgress(100);
+    setTimeout(() => setLeaving(true), reduceMotion() ? 0 : 250);
+    const next = Mercato.getSession() ? Mercato.to.home : Mercato.to.login;
+    setTimeout(() => navigate(next, { replace: true }), reduceMotion() ? 0 : 560);
+  };
+  React.useEffect(() => {
+    let alive = true;
+    const start = setTimeout(() => alive && setProgress(90), 60); // eases to 90% over the minimum display time
+    const minShow = new Promise(r => setTimeout(r, reduceMotion() ? 300 : 1400));
+    const fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+    Promise.all([minShow, fontsReady]).then(() => alive && finish());
+    return () => { alive = false; clearTimeout(start); };
+  }, []);
+
+  return <div className={'splash' + (leaving ? ' leaving' : '')} onClick={finish} role="presentation">
+    <button className="link muted splash-skip" onClick={e => { e.stopPropagation(); finish(); }}>Skip</button>
+    <div className="splash-glow" aria-hidden="true" />
+
+    <div className="splash-center">
+      <div className="splash-logo" aria-hidden="true">
+        <span className="splash-ring" /><span className="splash-ring late" />
+        <div className="splash-mark"><Icon name="leaf" size={46} strokeWidth={1.9} /></div>
+      </div>
+      <h1 className="splash-word">Mercato</h1>
+      <p className="splash-tag">Fresh, simple, delivered.</p>
+      <div className="splash-progress" role="progressbar" aria-label="Loading Mercato" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}>
+        <span className={progress === 100 ? 'done' : ''} style={{ width: progress + '%' }} />
+      </div>
+    </div>
+
+    <p className="splash-version">MERCATO PROTOTYPE · V1.0</p>
+  </div>;
+}
+
+Mercato.mount(SplashScreen);
+</script>
+</body>
+</html>

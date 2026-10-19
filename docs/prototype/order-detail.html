@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FAFAF8" />
+  <title>Mercato — Order details</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/mercato.css" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11"></script>
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+  <!-- Shared data, navigation and UI components (ScreenLayout, AppHeader, TabBar, ProductCard, …) -->
+  <script src="assets/mercato.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Screen: Order details -->
+<script type="text/babel">
+/* SCR-018 Order details: status timeline, items, delivery and payment summary. Opened as order-detail.html?id=<orderId>. */
+function OrderDetailScreen({ params, goBack }) {
+  const to = Mercato.to;
+  const o = Mercato.getOrders().find(x => x.id === params.id);
+  if (!o) return <ScreenLayout active="profile" header={<AppHeader title="Order" onBack={() => goBack(to.orders)} />}>
+    <EmptyState icon="box" title="Order not found" text="We couldn’t find that order." action={<a href={to.orders} className="btn btn-primary">Back to my orders</a>} />
+  </ScreenLayout>;
+  const at = Math.max(0, ORDER_STAGES.findIndex(s => s[0] === o.status));
+
+  return <ScreenLayout active="profile" header={<AppHeader title={'#' + o.reference} sub={Mercato.fmtDate(o.createdAt)} onBack={() => goBack(to.orders)} />}>
+    <section className="card" aria-labelledby="od-status">
+      <div className="flex items-center justify-between mb-4"><h2 id="od-status" className="t-head">Order status</h2><OrderStatusBadge status={o.status} /></div>
+      <ol className="vsteps">{ORDER_STAGES.map(([s, title, text], i) => <li key={s} className={'vstep' + (i <= at ? ' done' : '') + (i === at ? ' current' : '')} aria-current={i === at ? 'step' : undefined}>
+        <span className="dot">{i <= at ? <Icon name="check" size={14} strokeWidth={3} /> : i + 1}</span>
+        <span className="txt"><b className="block" style={{ fontSize: 14 }}>{title}</b><span className="t-meta">{i === at && s !== 'delivered' ? text + ' · est. ' + deliveryWindow(o.createdAt) : text}</span></span>
+      </li>)}</ol>
+    </section>
+
+    <h2 className="section-label">Items · {Mercato.orderItemCount(o)}</h2>
+    <section className="card">
+      {o.items.length ? <ul className="flex flex-col gap-3">{o.items.map(i => <li key={i.productId} className="flex items-center gap-3">
+        <a href={to.product(i.productId)} aria-label={'View ' + i.name}><ProductImage src={orderItemImage(i)} alt="" className="thumb" /></a>
+        <span className="flex-1 min-w-0"><span className="t-head truncate block">{i.name}</span><span className="t-meta">{i.quantity} × {Mercato.money(i.unitPrice)}</span></span>
+        <b className="tabular">{Mercato.money(i.lineTotal)}</b>
+      </li>)}</ul> : <p className="t-body muted">Item details weren’t stored for this older order.</p>}
+    </section>
+
+    <h2 className="section-label">Delivery</h2>
+    <section className="card flex gap-3">
+      <span className="icon-tile"><Icon name="pin" size={20} /></span>
+      <span className="min-w-0">
+        <b className="block">{o.delivery.recipientName}</b>
+        <span className="t-meta block">{o.delivery.email}</span>
+        <span className="t-meta block">{o.delivery.address}</span>
+        <span className="t-meta block mt-1">{Mercato.label(o.deliveryMethod)} delivery · {paymentLabel(o.paymentMethod)}</span>
+      </span>
+    </section>
+
+    <h2 className="section-label">Payment summary</h2>
+    <section className="card">
+      <div className="kv"><span>Subtotal</span><b>{Mercato.money(o.subtotal)}</b></div>
+      <div className="kv"><span>Delivery fee</span><b>{Mercato.money(o.deliveryFee)}</b></div>
+      <div className="kv-total"><span>Total</span><span className="amount">{Mercato.money(o.total)}</span></div>
+      <p className="t-meta mt-3">Last updated {new Date(o.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>
+    </section>
+  </ScreenLayout>;
+}
+
+Mercato.mount(OrderDetailScreen);
+</script>
+</body>
+</html>

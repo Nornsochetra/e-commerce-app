@@ -10,7 +10,10 @@ Mercato is a mobile e-commerce app (Setec Institute year-4 project), split into 
 - `frontend-app/` — Flutter app (Android/iOS phones, portrait). **Not started:** `lib/main.dart` is still the default counter template.
 - `docs/` — the source of truth for behavior. Read the relevant doc before changing a feature.
   - `requirement.md` (scope, screen inventory SCR-001…022, system-wide business rules), `usecase.md`, `features/*.md` (per-feature specs), `api-convention.md`, `api-specification.md` (every endpoint, keyed by ApiId), `data-model.md`, `backend/backend-patterns.md`.
-  - `prototype/` — approved, clickable HTML UI prototype (React + Tailwind via CDN, mock data in `localStorage`). It is the visual spec for the Flutter screens. Open `prototype/index.html` in a browser; no build step. Each page is self-contained and generated from shared source that is **not** in the repo, so edit the HTML files directly and expect shared parts (design tokens, icons, mock data, nav) to be duplicated across pages.
+  - `prototype/` — approved, clickable HTML UI prototype (React + Babel + Tailwind via CDN, mock data in `localStorage`). It is the visual spec for the Flutter screens. Opens from `file://` with no build step; see `prototype/README.md`.
+    - One screen per HTML file (`splash.html`, `login.html`, `home.html`, `categories.html`, `product.html?id=…`, `cart.html`, `checkout.html`, `order-detail.html?id=…`, …). `index.html` only redirects to `splash.html`; `screens.html` lists every screen.
+    - Shared code lives in `prototype/assets/`: `mercato.js` (plain JS, no JSX — mock data, `Mercato.to.*` link builders, and globals such as `ScreenLayout`, `AppHeader`, `TabBar`, `ProductCard`, `BottomSheet`, `TextField`) and `mercato.css` (design tokens + component classes, wrapped in `@layer components` so Tailwind utilities still override). Each screen file keeps its component inline in `<script type="text/babel">` and ends with `Mercato.mount(Screen)`, which re-renders on any data change and passes `params`/`query`, `navigate`, `goBack`.
+    - Navigation: floating tab bar = Home, Categories, Wishlist, Cart, Profile (`<ScreenLayout active="…">`). Orders are reached from Profile, the Home order banner, notifications and the order confirmation. Product details and checkout hide the tab bar and use a sticky bottom action dock.
 
 ## Backend commands
 

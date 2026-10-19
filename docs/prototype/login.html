@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FAFAF8" />
+  <title>Mercato — Sign in</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/mercato.css" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11"></script>
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+  <!-- Shared data, navigation and UI components (ScreenLayout, AppHeader, TabBar, ProductCard, …) -->
+  <script src="assets/mercato.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Screen: Sign in -->
+<script type="text/babel">
+/* SCR-002 Login. Prototype accepts only the demo account; guests can browse without signing in. */
+const DEMO_ACCOUNT = { email: 'demo@mercato.app', password: 'Demo123!' };
+
+function LoginScreen({ navigate }) {
+  const to = Mercato.to;
+  const f = useForm({ email: '', password: '' }, v => ({
+    ...(RULES.email(v.email) ? { email: RULES.email(v.email) } : {}),
+    ...(!v.password ? { password: 'Enter your password.' } : v.password.length < 8 ? { password: 'Passwords have at least 8 characters.' } : {})
+  }));
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [done, setDone] = React.useState(false);
+
+  const submit = e => {
+    e.preventDefault();
+    if (loading || done) return;
+    f.touchAll(); setError('');
+    if (!f.valid) { f.focusFirstError(); return; }
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      if (f.values.email.trim().toLowerCase() !== DEMO_ACCOUNT.email || f.values.password !== DEMO_ACCOUNT.password) {
+        setError('That email and password don’t match. Use the demo account above, or continue as a guest.');
+        return;
+      }
+      Mercato.setSession({ mode: 'user', email: DEMO_ACCOUNT.email });
+      setDone(true);
+      setTimeout(() => navigate(to.home), 500);
+    }, 700);
+  };
+  const fillDemo = () => { f.set('email')(DEMO_ACCOUNT.email); f.set('password')(DEMO_ACCOUNT.password); setError(''); };
+
+  return <AuthLayout>
+    <section aria-labelledby="login-title">
+      <h1 id="login-title" className="t-display">Welcome back</h1>
+      <p className="t-body muted mt-1">Sign in to continue shopping.</p>
+      <div className="demo-box mt-5">
+        <div><b className="block">Demo account</b><span className="muted">{DEMO_ACCOUNT.email} · {DEMO_ACCOUNT.password}</span></div>
+        <button type="button" className="btn btn-secondary btn-sm" onClick={fillDemo}>Fill in</button>
+      </div>
+      <form className="flex flex-col gap-4 mt-5" onSubmit={submit} noValidate>
+        {error && <p className="alert error" role="alert"><Icon name="alert" size={18} />{error}</p>}
+        {done && <p className="alert success" role="status"><Icon name="check" size={18} />Signed in. Taking you to the shop…</p>}
+        <TextField id="login-email" label="Email" type="email" inputMode="email" autoComplete="email" enterKeyHint="next" placeholder="you@example.com"
+          value={f.values.email} onChange={f.set('email')} onBlur={f.blur('email')} error={f.shown('email')} />
+        <TextField id="login-pw" label="Password" type="password" toggle autoComplete="current-password" enterKeyHint="go" placeholder="At least 8 characters" maxLength={72}
+          value={f.values.password} onChange={f.set('password')} onBlur={f.blur('password')} error={f.shown('password')} />
+        <div className="flex justify-end" style={{ marginTop: -10 }}><a href={to.forgotPassword} className="link">Forgot password?</a></div>
+        <button className="btn btn-primary btn-block" disabled={loading || done}>{loading ? <Spinner text="Signing in…" /> : 'Sign in'}</button>
+      </form>
+      <p className="divider-text mt-6">or continue with</p>
+      <div className="social mt-4">
+        <button type="button" className="btn btn-outline" onClick={() => Mercato.toast('Google sign-in isn’t available in this prototype')}><Icon name="google" size={20} />Google</button>
+        <button type="button" className="btn btn-outline" onClick={() => Mercato.toast('Apple sign-in isn’t available in this prototype')}><Icon name="apple" size={20} />Apple</button>
+      </div>
+      <a href={to.home} className="btn btn-block mt-3" style={{ color: 'var(--text-2)' }} onClick={() => Mercato.setSession({ mode: 'guest' })}>Continue as guest</a>
+      <p className="text-center t-body muted mt-4">New to Mercato? <a href={to.register} className="link">Create an account</a></p>
+    </section>
+  </AuthLayout>;
+}
+
+Mercato.mount(LoginScreen);
+</script>
+</body>
+</html>

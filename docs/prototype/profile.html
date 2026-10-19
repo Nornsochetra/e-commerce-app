@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FAFAF8" />
+  <title>Mercato — Profile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/mercato.css" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11"></script>
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+  <!-- Shared data, navigation and UI components (ScreenLayout, AppHeader, TabBar, ProductCard, …) -->
+  <script src="assets/mercato.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Screen: Profile -->
+<script type="text/babel">
+/* SCR-005/006 Profile and edit profile (bottom sheet), account links, deferred items, reset and log out. */
+function EditProfileSheet({ user, onClose, onSave }) {
+  const [draft, setDraft] = React.useState({ name: user.name, email: user.email, phone: user.phone || '' });
+  const [touched, setTouched] = React.useState({});
+  const [saving, setSaving] = React.useState(false);
+  const [confirmDiscard, setConfirmDiscard] = React.useState(false);
+  const errors = {
+    ...(!draft.name.trim() ? { name: 'Enter your full name.' } : {}),
+    ...(RULES.email(draft.email) ? { email: 'Enter a valid email address.' } : {}),
+    ...(RULES.phone(draft.phone) ? { phone: RULES.phone(draft.phone) } : {})
+  };
+  const dirty = draft.name !== user.name || draft.email !== user.email || draft.phone !== (user.phone || '');
+  const err = k => (touched[k] ? errors[k] : undefined);
+  const bind = k => ({ id: 'pf-' + k, value: draft[k], 'aria-invalid': err(k) ? 'true' : 'false', 'aria-describedby': err(k) ? 'pf-' + k + '-err' : undefined,
+    onChange: e => setDraft(d => ({ ...d, [k]: e.target.value })), onBlur: () => setTouched(t => ({ ...t, [k]: true })) });
+  const tryClose = () => (dirty && !saving ? setConfirmDiscard(true) : onClose());
+  const submit = e => {
+    e.preventDefault();
+    if (saving) return;
+    setTouched({ name: true, email: true, phone: true });
+    if (Object.keys(errors).length) return;
+    setSaving(true);
+    setTimeout(() => onSave({ name: draft.name.trim(), email: draft.email.trim().toLowerCase(), phone: draft.phone.trim() }), 600);
+  };
+
+  if (confirmDiscard) return <BottomSheet title="Discard changes?" onClose={() => setConfirmDiscard(false)} role="alertdialog">
+    <p className="t-body muted mt-2">Your edits to this profile haven’t been saved.</p>
+    <div className="sheet-actions">
+      <button type="button" className="btn btn-outline" onClick={() => setConfirmDiscard(false)}>Keep editing</button>
+      <button type="button" className="btn btn-danger-solid" onClick={onClose}>Discard</button>
+    </div>
+  </BottomSheet>;
+
+  return <BottomSheet title="Edit profile" onClose={tryClose}>
+    <form className="flex flex-col gap-4 mt-5" onSubmit={submit} noValidate>
+      <FieldShell id="pf-name" label="Full name" error={err('name')}><input className="input" autoComplete="name" maxLength={100} {...bind('name')} /></FieldShell>
+      <FieldShell id="pf-email" label="Email" error={err('email')}><input className="input" type="email" inputMode="email" autoComplete="email" maxLength={255} {...bind('email')} /></FieldShell>
+      <FieldShell id="pf-phone" label={<>Phone <span className="opt">(optional)</span></>} error={err('phone')}><input className="input" type="tel" inputMode="tel" autoComplete="tel" maxLength={32} placeholder="+855 12 345 678" {...bind('phone')} /></FieldShell>
+      <div className="sheet-actions" style={{ marginTop: 8 }}>
+        <button type="button" className="btn btn-outline" onClick={tryClose}>Cancel</button>
+        <button className="btn btn-primary" disabled={saving || !dirty}>{saving ? <Spinner text="Saving…" /> : 'Save changes'}</button>
+      </div>
+    </form>
+  </BottomSheet>;
+}
+
+function ProfileMenuRow({ icon, tone, title, sub, href, badge, soon, onClick }) {
+  const inner = <>
+    <span className={'icon-tile ' + (tone || '')}><Icon name={icon} size={20} /></span>
+    <span className="flex-1 min-w-0"><span className="t-head block">{title}</span>{sub && <span className="t-meta block">{sub}</span>}</span>
+    {soon ? <span className="badge neutral">Soon</span> : badge ? <span className="badge success">{badge}</span> : null}
+    {!soon && <Icon name="chevron" size={18} className="faint" />}
+  </>;
+  if (soon) return <div className="list-row" aria-disabled="true">{inner}</div>;
+  return href ? <a className="list-row" href={href}>{inner}</a> : <button className="list-row" onClick={onClick}>{inner}</button>;
+}
+
+function ProfileScreen({ navigate }) {
+  const to = Mercato.to;
+  const [editing, setEditing] = React.useState(false);
+  const [dialog, setDialog] = React.useState(null);
+  const user = Mercato.getUser(), session = Mercato.getSession();
+  const orders = Mercato.getOrders(), activeOrders = orders.filter(o => o.status !== 'delivered').length;
+  const saved = Mercato.getWishlist().length, inCart = Mercato.cartCount(), unread = Mercato.unreadCount();
+
+  const save = draft => { Mercato.saveUser({ ...user, ...draft, updatedAt: new Date().toISOString() }); setEditing(false); Mercato.toast('Profile updated'); };
+  const logOut = () => { Mercato.setSession(null); navigate(to.login, { replace: true }); };
+  const resetDemo = () => { Mercato.resetAll(); setDialog(null); navigate(to.splash, { replace: true }); };
+
+  return <ScreenLayout active="profile" header={<AppHeader title="Profile" end={<BellButton />} />}>
+    <section className="card flex items-center gap-4" aria-label="Your profile">
+      <div className="avatar" aria-hidden="true">{Mercato.initials(user.name)}</div>
+      <div className="flex-1 min-w-0">
+        <h2 className="t-section truncate">{user.name}</h2>
+        <p className="t-meta truncate" style={{ fontSize: 13 }}>{user.email}</p>
+        <p className="t-meta">{user.phone || 'No phone number'}</p>
+        <p className="t-meta">Member since {new Date(user.memberSince).getFullYear()}</p>
+      </div>
+      <button className="btn btn-secondary btn-sm" onClick={() => setEditing(true)}><Icon name="edit" size={16} />Edit</button>
+    </section>
+    {session && session.mode === 'guest' && <p className="alert info mt-3"><Icon name="info" size={18} /><span>You’re browsing as a guest. <a href={to.login} className="underline">Sign in</a> to sync your account.</span></p>}
+
+    <div className="stat-grid mt-4">
+      <a className="stat" href={to.orders}><b>{orders.length}</b><span>Orders</span></a>
+      <a className="stat" href={to.wishlist}><b>{saved}</b><span>Saved</span></a>
+      <a className="stat" href={to.cart}><b>{inCart}</b><span>In cart</span></a>
+    </div>
+
+    <h2 className="section-label">Shopping</h2>
+    <nav className="card flush" aria-label="Shopping">
+      <ProfileMenuRow icon="box" title="My orders" sub={activeOrders ? activeOrders + ' in progress' : 'Track and review orders'} href={to.orders} />
+      <ProfileMenuRow icon="bell" title="Notifications" sub="Order updates and offers" href={to.notifications} badge={unread ? unread + ' new' : null} />
+      <ProfileMenuRow icon="heart" title="Wishlist" sub="Products you saved" href={to.wishlist} />
+    </nav>
+
+    <h2 className="section-label">More</h2>
+    <nav className="card flush" aria-label="More">
+      <ProfileMenuRow icon="settings" tone="neutral" title="Settings" soon />
+      <ProfileMenuRow icon="help" tone="neutral" title="About Mercato" soon />
+      <ProfileMenuRow icon="phone" tone="neutral" title="Contact us" soon />
+      <ProfileMenuRow icon="refresh" tone="neutral" title="Reset demo data" sub="Restore the sample cart, orders and profile" onClick={() => setDialog('reset')} />
+    </nav>
+
+    <button className="btn btn-danger btn-block mt-6" onClick={() => setDialog('logout')}><Icon name="logout" size={18} />Log out</button>
+    <p className="t-meta text-center mt-3">Mercato prototype · data stays in this browser</p>
+
+    {editing && <EditProfileSheet user={user} onClose={() => setEditing(false)} onSave={save} />}
+    {dialog && <BottomSheet title={dialog === 'reset' ? 'Reset demo data?' : 'Log out of Mercato?'} onClose={() => setDialog(null)} role="alertdialog">
+      <p className="t-body muted mt-2">{dialog === 'reset' ? 'This restores the original sample cart, wishlist, notifications, orders and profile in this browser.' : 'You’ll return to the sign-in screen. Your cart and wishlist stay saved in this browser.'}</p>
+      <div className="sheet-actions">
+        <button className="btn btn-outline" onClick={() => setDialog(null)}>Cancel</button>
+        <button className={'btn ' + (dialog === 'reset' ? 'btn-primary' : 'btn-danger-solid')} onClick={dialog === 'reset' ? resetDemo : logOut}>{dialog === 'reset' ? 'Reset' : 'Log out'}</button>
+      </div>
+    </BottomSheet>}
+  </ScreenLayout>;
+}
+
+Mercato.mount(ProfileScreen);
+</script>
+</body>
+</html>

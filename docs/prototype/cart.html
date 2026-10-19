@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FAFAF8" />
+  <title>Mercato — Cart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/mercato.css" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11"></script>
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+  <!-- Shared data, navigation and UI components (ScreenLayout, AppHeader, TabBar, ProductCard, …) -->
+  <script src="assets/mercato.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Screen: Shopping cart -->
+<script type="text/babel">
+/* SCR-013 Shopping cart: quantity, remove with undo, save for later, summary and a sticky Checkout dock. */
+function CartItemRow({ item, onQty, onRemove, onSave }) {
+  const max = item.product.availableQuantity, atMax = item.quantity >= max;
+  const href = Mercato.to.product(item.product.id);
+  return <article className="cart-item">
+    <a href={href} className="media" aria-label={'View ' + item.product.name}><ProductImage src={item.product.imageUrl} alt="" /></a>
+    <div className="body">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <a href={href} className="t-head truncate block">{item.product.name}</a>
+          <p className="t-meta mt-0.5">{item.product.category ? item.product.category + ' · ' : ''}{Mercato.money(item.unitPrice)} each</p>
+        </div>
+        <button className="circle-btn sm" style={{ marginTop: -2, marginRight: -2 }} aria-label={'Remove ' + item.product.name + ' from cart'} onClick={() => onRemove(item)}><Icon name="trash" size={17} /></button>
+      </div>
+      {atMax ? <p className="t-meta mt-1" style={{ color: 'var(--warning)', fontWeight: 700 }}>Only {max} available</p>
+        : <button className="link muted" style={{ minHeight: 36, fontSize: 12, alignSelf: 'flex-start' }} onClick={() => onSave(item)}><Icon name="heart" size={14} />Save for later</button>}
+      <div className="foot mt-2">
+        <QtyStepper value={item.quantity} max={max} name={item.product.name} onChange={q => onQty(item, q)} />
+        <b className="t-price">{Mercato.money(item.lineTotal)}</b>
+      </div>
+    </div>
+  </article>;
+}
+
+function CartScreen() {
+  const to = Mercato.to;
+  const cart = Mercato.getCart(), items = cart.items;
+  const fee = Mercato.DELIVERY_FEE;
+  const total = Mercato.usd(Number(cart.subtotal.amount) + Number(fee.amount));
+
+  const setQty = (item, q) => {
+    const quantity = Math.max(1, Math.min(item.product.availableQuantity, q));
+    Mercato.saveCart(items.map(i => i.id !== item.id ? i : { ...i, quantity, lineTotal: Mercato.lineOf(i.unitPrice, quantity) }));
+  };
+  const remove = item => {
+    const index = items.findIndex(i => i.id === item.id);
+    Mercato.saveCart(items.filter(i => i.id !== item.id));
+    Mercato.toast('Removed from cart', { label: 'Undo', onClick: () => { const now = Mercato.getCart().items.slice(); now.splice(Math.min(index, now.length), 0, item); Mercato.saveCart(now); } });
+  };
+  const saveForLater = item => {
+    const p = Mercato.productById(item.product.id);
+    if (p && !Mercato.inWishlist(p.id)) Mercato.saveWishlist([...Mercato.getWishlist(), p]);
+    Mercato.saveCart(items.filter(i => i.id !== item.id));
+    Mercato.toast('Moved to wishlist', { label: 'Undo', onClick: () => Mercato.saveCart([...Mercato.getCart().items, item]) });
+  };
+
+  const dock = items.length > 0 && <>
+    <div className="dock-meta"><small>Total</small><b className="t-price" style={{ fontSize: 18 }}>{Mercato.money(total)}</b></div>
+    <a href={to.checkout} className="btn btn-primary">Checkout<Icon name="chevron" size={18} strokeWidth={2.4} /></a>
+  </>;
+
+  return <ScreenLayout active="cart" dock={dock} header={<AppHeader title="My Cart" sub={cart.itemCount ? cart.itemCount + (cart.itemCount === 1 ? ' item' : ' items') : undefined} />}>
+    {items.length ? <>
+      <section aria-label="Cart items">{items.map(item => <CartItemRow key={item.id} item={item} onQty={setQty} onRemove={remove} onSave={saveForLater} />)}</section>
+      <section className="card mt-5" aria-labelledby="cart-summary">
+        <h2 id="cart-summary" className="t-head mb-3">Order summary</h2>
+        <div className="kv"><span>Subtotal · {cart.itemCount} {cart.itemCount === 1 ? 'item' : 'items'}</span><b>{Mercato.money(cart.subtotal)}</b></div>
+        <div className="kv"><span>Delivery · standard</span><b>{Mercato.money(fee)}</b></div>
+        <div className="kv"><span>Discounts</span><b className="faint" style={{ fontWeight: 600 }}>None available</b></div>
+        <div className="kv-total"><span>Total</span><span className="amount">{Mercato.money(total)}</span></div>
+      </section>
+      <p className="t-meta flex items-center gap-2 mt-3 px-1"><Icon name="shield" size={16} />Totals are confirmed at checkout. Pay with cash on delivery.</p>
+      <a href={to.shop()} className="link mt-2 px-1">Continue shopping</a>
+    </> : <EmptyState icon="bag" title="Your cart is empty" text="Browse the shop and tap Add on anything you like."
+      action={<a href={to.shop()} className="btn btn-primary">Start shopping</a>} secondary={<a href={to.wishlist} className="link mt-2">View wishlist</a>} />}
+  </ScreenLayout>;
+}
+
+Mercato.mount(CartScreen);
+</script>
+</body>
+</html>

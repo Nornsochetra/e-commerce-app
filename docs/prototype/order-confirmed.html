@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FAFAF8" />
+  <title>Mercato — Order confirmed</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/mercato.css" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11"></script>
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+  <!-- Shared data, navigation and UI components (ScreenLayout, AppHeader, TabBar, ProductCard, …) -->
+  <script src="assets/mercato.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Screen: Order confirmation -->
+<script type="text/babel">
+/* SCR-016 Order confirmation. Opened as order-confirmed.html?id=<orderId>. */
+function OrderConfirmationScreen({ params }) {
+  const to = Mercato.to;
+  const o = Mercato.getOrders().find(x => x.id === params.id);
+  if (!o) return <ScreenLayout nav={false} header={<AppHeader title="Order" start={<a href={to.orders} className="circle-btn" aria-label="My orders"><Icon name="chevronl" size={22} /></a>} />}>
+    <EmptyState icon="box" title="Order not found" text="We couldn’t find that order." action={<a href={to.orders} className="btn btn-primary">View my orders</a>} />
+  </ScreenLayout>;
+
+  return <ScreenLayout nav={false} header={<AppHeader end={<a href={to.home} className="circle-btn" aria-label="Close and go home"><Icon name="x" size={20} /></a>} />}>
+    <div className="text-center">
+      <div className="success-mark"><span className="core"><Icon name="check" size={34} strokeWidth={3} /></span></div>
+      <h1 className="t-title mt-5">Order confirmed!</h1>
+      <p className="t-body muted mt-1">Thanks, {o.delivery.recipientName.split(' ')[0]}. We’ll notify you when it ships.</p>
+    </div>
+    <div className="card mt-6">
+      <div className="flex items-center gap-3">
+        <span className="icon-tile"><Icon name="box" size={20} /></span>
+        <span className="flex-1"><b className="block">Order #{o.reference}</b><span className="t-meta">{new Date(o.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} · {Mercato.orderItemCount(o)} items</span></span>
+        <b className="t-price">{Mercato.money(o.total)}</b>
+      </div>
+      <div className="card tint mt-4 flex items-center gap-3" style={{ padding: 14 }}>
+        <Icon name="truck" size={22} className="accent" />
+        <span><span className="t-meta block">Estimated delivery</span><b>{deliveryWindow(o.createdAt)}</b><span className="t-meta"> · {paymentLabel(o.paymentMethod)}</span></span>
+      </div>
+    </div>
+    <a href={to.order(o.id)} className="btn btn-primary btn-block mt-6">Track order</a>
+    <a href={to.home} className="btn btn-outline btn-block mt-3">Continue shopping</a>
+    <div className="text-center mt-2"><a href={to.orders} className="link">View all orders</a></div>
+  </ScreenLayout>;
+}
+
+Mercato.mount(OrderConfirmationScreen);
+</script>
+</body>
+</html>

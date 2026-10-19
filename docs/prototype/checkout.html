@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FAFAF8" />
+  <title>Mercato — Checkout</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/mercato.css" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11"></script>
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+  <!-- Shared data, navigation and UI components (ScreenLayout, AppHeader, TabBar, ProductCard, …) -->
+  <script src="assets/mercato.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Screen: Checkout -->
+<script type="text/babel">
+/* SCR-015 Checkout: delivery address (view/edit), payment, order review and a sticky Place order dock. */
+function CheckoutScreen({ navigate, goBack }) {
+  const to = Mercato.to;
+  const cart = Mercato.getCart(), user = Mercato.getUser(), lastOrder = Mercato.getOrders()[0];
+  const [form, setForm] = React.useState(() => ({ recipientName: user.name, email: user.email, address: (lastOrder && lastOrder.delivery && lastOrder.delivery.address) || Mercato.demoDelivery.address }));
+  const [editing, setEditing] = React.useState(false);
+  const [touched, setTouched] = React.useState({});
+  const [loading, setLoading] = React.useState(false);
+  const placing = React.useRef(false);
+  const fee = Mercato.DELIVERY_FEE, total = Mercato.usd(Number(cart.subtotal.amount) + Number(fee.amount));
+
+  const errors = {
+    ...(!form.recipientName.trim() ? { recipientName: 'Enter the recipient’s name.' } : {}),
+    ...(RULES.email(form.email) ? { email: RULES.email(form.email) } : {}),
+    ...(form.address.trim().length < 8 ? { address: 'Enter a full delivery address (street, city).' } : {})
+  };
+  const invalid = Object.keys(errors).length > 0;
+  const err = k => (touched[k] ? errors[k] : undefined);
+  const bind = k => ({ id: 'co-' + k, value: form[k], 'aria-invalid': err(k) ? 'true' : 'false', 'aria-describedby': err(k) ? 'co-' + k + '-err' : undefined,
+    onChange: e => setForm(f => ({ ...f, [k]: e.target.value })), onBlur: () => setTouched(t => ({ ...t, [k]: true })) });
+
+  const placeOrder = () => {
+    if (placing.current) return; // guard against double submission
+    setTouched({ recipientName: true, email: true, address: true });
+    if (invalid) { setEditing(true); setTimeout(() => { const first = document.querySelector('[aria-invalid="true"]'); first && first.focus(); }, 60); return; }
+    placing.current = true; setLoading(true);
+    setTimeout(() => {
+      const at = new Date().toISOString();
+      const order = {
+        id: crypto.randomUUID(), reference: 'MC-' + Math.floor(21000 + Math.random() * 8000), status: 'confirmed',
+        items: cart.items.map(i => ({ productId: i.product.id, name: i.product.name, quantity: i.quantity, unitPrice: i.unitPrice, lineTotal: i.lineTotal })),
+        delivery: { recipientName: form.recipientName.trim(), email: form.email.trim(), address: form.address.trim() },
+        deliveryMethod: 'standard', estimatedDelivery: '2–4 business days', paymentMethod: 'cash_on_delivery',
+        subtotal: cart.subtotal, deliveryFee: fee, total, createdAt: at, updatedAt: at
+      };
+      Mercato.saveOrders([order, ...Mercato.getOrders()]);
+      Mercato.pushNotification({ type: 'order', title: 'Order confirmed', message: 'Order #' + order.reference + ' has been confirmed. We’ll let you know when it ships.' });
+      Mercato.clearCart();
+      navigate(to.orderConfirmed(order.id), { replace: true }); // Back should not return to an empty checkout
+    }, 900);
+  };
+
+  const header = <AppHeader title="Checkout" onBack={() => goBack(to.cart)} />;
+  if (!cart.items.length) return <ScreenLayout nav={false} header={header}>
+    <EmptyState icon="bag" title="Your cart is empty" text="Add products to your cart before checking out." action={<a href={to.shop()} className="btn btn-primary">Browse products</a>} />
+  </ScreenLayout>;
+
+  const dock = <>
+    <div className="dock-meta"><small>Total</small><b className="t-price" style={{ fontSize: 18 }}>{Mercato.money(total)}</b></div>
+    <button className="btn btn-primary" disabled={loading} onClick={placeOrder}>{loading ? <Spinner text="Placing…" /> : 'Place order'}</button>
+  </>;
+
+  return <ScreenLayout nav={false} header={header} dock={dock}>
+    <form onSubmit={e => { e.preventDefault(); placeOrder(); }} noValidate aria-busy={loading}>
+      <section aria-labelledby="co-delivery">
+        <div className="flex items-center justify-between mb-2.5"><h2 id="co-delivery" className="t-section">Delivery address</h2><button type="button" className="link" onClick={() => setEditing(v => !v)}>{editing ? 'Done' : 'Edit'}</button></div>
+        {!editing ? <button type="button" className="choice" onClick={() => setEditing(true)} style={invalid ? { borderColor: 'var(--error)' } : undefined}>
+          <span className="icon-tile"><Icon name="pin" size={20} /></span>
+          <span className="flex-1 min-w-0">
+            <b className="block truncate">{form.recipientName || 'Recipient name missing'}</b>
+            <span className="t-meta block truncate">{form.email || 'Email missing'}</span>
+            <span className="t-meta block clamp-2">{form.address || 'Address missing'}</span>
+          </span>
+          <Icon name="chevron" size={18} className="faint" />
+        </button> : <div className="card flex flex-col gap-4">
+          <FieldShell id="co-recipientName" label="Recipient name" error={err('recipientName')}><input className="input" autoComplete="name" maxLength={120} placeholder="Full name" {...bind('recipientName')} /></FieldShell>
+          <FieldShell id="co-email" label="Email for updates" error={err('email')}><input className="input" type="email" inputMode="email" autoComplete="email" maxLength={255} placeholder="you@example.com" {...bind('email')} /></FieldShell>
+          <FieldShell id="co-address" label="Delivery address" error={err('address')}><textarea className="textarea" autoComplete="street-address" maxLength={1000} placeholder="Street, district, city" {...bind('address')} /></FieldShell>
+        </div>}
+        {!editing && invalid && <p className="field-error"><Icon name="alert" size={14} />Some delivery details are missing. Tap to edit.</p>}
+      </section>
+
+      <section className="mt-6" aria-labelledby="co-payment">
+        <h2 id="co-payment" className="t-section mb-2.5">Payment</h2>
+        <div role="radiogroup" aria-labelledby="co-payment">
+          <div role="radio" aria-checked="true" tabIndex={0} className="choice">
+            <span className="radio"><Icon name="check" size={13} strokeWidth={3} /></span>
+            <span className="flex-1"><b className="block">Cash on delivery</b><span className="t-meta">Pay the courier when your order arrives</span></span>
+            <Icon name="cash" size={22} className="accent" />
+          </div>
+          <div role="radio" aria-checked="false" aria-disabled="true" className="choice">
+            <span className="radio" />
+            <span className="flex-1"><b className="block">Credit / debit card</b><span className="t-meta">Not available in this version</span></span>
+            <span className="badge neutral">Soon</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-6" aria-labelledby="co-review">
+        <h2 id="co-review" className="t-section mb-2.5">Your order</h2>
+        <div className="card">
+          <ul className="flex flex-col gap-3">{cart.items.map(i => <li key={i.id} className="flex items-center gap-3">
+            <ProductImage src={i.product.imageUrl} alt="" className="thumb" />
+            <span className="flex-1 min-w-0"><span className="t-head truncate block">{i.product.name}</span><span className="t-meta">Qty {i.quantity} · {Mercato.money(i.unitPrice)}</span></span>
+            <b className="tabular">{Mercato.money(i.lineTotal)}</b>
+          </li>)}</ul>
+          <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--line)' }}>
+            <div className="kv"><span>Subtotal</span><b>{Mercato.money(cart.subtotal)}</b></div>
+            <div className="kv"><span>Standard delivery · 2–4 days</span><b>{Mercato.money(fee)}</b></div>
+            <div className="kv-total"><span>Total</span><span className="amount">{Mercato.money(total)}</span></div>
+          </div>
+        </div>
+        <p className="t-meta flex items-center gap-2 mt-3 px-1"><Icon name="info" size={16} />Prototype only — no real order or payment is created.</p>
+      </section>
+      <button type="submit" className="sr-only">Place order</button>
+    </form>
+  </ScreenLayout>;
+}
+
+Mercato.mount(CheckoutScreen);
+</script>
+</body>
+</html>

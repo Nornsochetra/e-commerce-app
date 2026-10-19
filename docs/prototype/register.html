@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FAFAF8" />
+  <title>Mercato — Create account</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/mercato.css" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11"></script>
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+  <!-- Shared data, navigation and UI components (ScreenLayout, AppHeader, TabBar, ProductCard, …) -->
+  <script src="assets/mercato.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Screen: Create account -->
+<script type="text/babel">
+/* SCR-003 Register. Registration signs the user in immediately (no email verification in v1). */
+function passwordStrength(pw) {
+  let s = 0;
+  if (pw.length >= 8) s++;
+  if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) s++;
+  if (/\d/.test(pw)) s++;
+  if (/[^A-Za-z0-9]/.test(pw) || pw.length >= 12) s++;
+  return Math.min(s, 4);
+}
+
+function RegisterScreen({ navigate, goBack }) {
+  const to = Mercato.to;
+  const f = useForm({ name: '', email: '', phone: '', password: '', confirm: '' }, v => ({
+    ...(!v.name.trim() ? { name: 'Enter your full name.' } : {}),
+    ...(RULES.email(v.email) ? { email: RULES.email(v.email) } : {}),
+    ...(RULES.phone(v.phone) ? { phone: RULES.phone(v.phone) } : {}),
+    ...(v.password.length < 8 ? { password: 'Use at least 8 characters.' } : {}),
+    ...(!v.confirm ? { confirm: 'Confirm your password.' } : v.confirm !== v.password ? { confirm: 'Passwords do not match.' } : {})
+  }));
+  const [loading, setLoading] = React.useState(false);
+  const [done, setDone] = React.useState(false);
+
+  const submit = e => {
+    e.preventDefault();
+    if (loading || done) return;
+    f.touchAll();
+    if (!f.valid) { f.focusFirstError(); return; }
+    setLoading(true);
+    setTimeout(() => {
+      const now = new Date().toISOString(), email = f.values.email.trim().toLowerCase();
+      Mercato.saveUser({ ...Mercato.getUser(), name: f.values.name.trim(), email, phone: f.values.phone.trim(), memberSince: now, createdAt: now, updatedAt: now });
+      Mercato.setSession({ mode: 'user', email });
+      setLoading(false); setDone(true);
+      setTimeout(() => navigate(to.home), 700);
+    }, 800);
+  };
+  const s = passwordStrength(f.values.password), tone = s <= 1 ? 'weak' : s <= 2 ? 'ok' : 'good';
+
+  return <AuthLayout onBack={() => goBack(to.login)}>
+    <section aria-labelledby="register-title">
+      <h1 id="register-title" className="t-display">Create account</h1>
+      <p className="t-body muted mt-1">Join Mercato — you’ll be signed in right away.</p>
+      <form className="flex flex-col gap-4 mt-6" onSubmit={submit} noValidate>
+        <TextField id="reg-name" label="Full name" autoComplete="name" enterKeyHint="next" placeholder="Alex Morgan" maxLength={100}
+          value={f.values.name} onChange={f.set('name')} onBlur={f.blur('name')} error={f.shown('name')} />
+        <TextField id="reg-email" label="Email" type="email" inputMode="email" autoComplete="email" enterKeyHint="next" placeholder="you@example.com" maxLength={255}
+          value={f.values.email} onChange={f.set('email')} onBlur={f.blur('email')} error={f.shown('email')} />
+        <TextField id="reg-phone" label={<>Phone <span className="opt">(optional)</span></>} type="tel" inputMode="tel" autoComplete="tel" enterKeyHint="next" placeholder="+855 12 345 678" maxLength={32}
+          value={f.values.phone} onChange={f.set('phone')} onBlur={f.blur('phone')} error={f.shown('phone')} />
+        <TextField id="reg-pw" label="Password" type="password" toggle autoComplete="new-password" enterKeyHint="next" placeholder="At least 8 characters" maxLength={72}
+          value={f.values.password} onChange={f.set('password')} onBlur={f.blur('password')} error={f.shown('password')}
+          hint={f.values.password ? undefined : 'Use 8+ characters. Mixing letters, numbers and symbols makes it stronger.'}>
+          {f.values.password && <>
+            <div className="strength" aria-hidden="true">{[1, 2, 3, 4].map(n => <span key={n} className={n <= s ? 'on ' + tone : ''} />)}</div>
+            <p className="field-hint">Strength: {['Too short', 'Weak', 'Fair', 'Good', 'Strong'][f.values.password.length < 8 ? 0 : s]}</p>
+          </>}
+        </TextField>
+        <TextField id="reg-confirm" label="Confirm password" type="password" toggle autoComplete="new-password" enterKeyHint="done" placeholder="Repeat your password" maxLength={72}
+          value={f.values.confirm} onChange={f.set('confirm')} onBlur={f.blur('confirm')} error={f.shown('confirm')} />
+        {done && <p className="alert success" role="status"><Icon name="check" size={18} />Account created. Taking you to the shop…</p>}
+        <button className="btn btn-primary btn-block mt-1" disabled={loading || done}>{loading ? <Spinner text="Creating account…" /> : 'Create account'}</button>
+      </form>
+      <p className="text-center t-body muted mt-5">Already have an account? <a href={to.login} className="link">Sign in</a></p>
+    </section>
+  </AuthLayout>;
+}
+
+Mercato.mount(RegisterScreen);
+</script>
+</body>
+</html>
