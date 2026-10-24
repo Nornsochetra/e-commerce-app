@@ -5,54 +5,178 @@ import 'package:provider/provider.dart';
 import '../../data/mock_data.dart';
 import '../../providers/auth/auth_provider.dart';
 import '../../theme.dart';
+import '../../utils/validators.dart';
 import '../../widgets/buttons/app_button.dart';
-import '../../widgets/feedback/app_toast.dart';
-import '../../widgets/layout/brand_logo.dart';
+import '../../widgets/feedback/alert_banner.dart';
+import '../../widgets/inputs/app_text_field.dart';
+import '../../widgets/layout/auth_layout.dart';
 
-/// PLACEHOLDER (slice 1): one-tap demo sign-in and guest access so navigation can be tested.
-/// The real form (email, password, validation) comes in slice 2.
-class LoginScreen extends StatelessWidget {
+/// Sign in with email + password (prototype: login.html).
+/// Until the backend is connected, only the demo account works.
+class LoginScreen extends StatefulWidget {
   final String? redirectTo; // where to go after signing in (set when a guest opened a protected screen)
   const LoginScreen({super.key, this.redirectTo});
 
   @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+
+  bool _submitted = false; // errors show only after the first Sign in tap
+  String? _error; // e.g. wrong password
+
+  String? get _emailError => _submitted ? validateEmail(_email.text) : null;
+
+  String? get _passwordError {
+    if (!_submitted) return null;
+    if (_password.text.isEmpty) return 'Enter your password.';
+    if (_password.text.length < 8) return 'Passwords have at least 8 characters.';
+    return null;
+  }
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    super.dispose();
+  }
+
+  void _fillDemo() {
+    setState(() {
+      _email.text = demoEmail;
+      _password.text = demoPassword;
+      _error = null;
+    });
+  }
+
+  Future<void> _signIn() async {
+    setState(() {
+      _submitted = true;
+      _error = null;
+    });
+    if (_emailError != null) return _emailFocus.requestFocus();
+    if (_passwordError != null) return _passwordFocus.requestFocus();
+
+    FocusScope.of(context).unfocus();
+    final error = await context.read<AuthProvider>().login(_email.text, _password.text);
+    if (!mounted) return;
+    if (error != null) {
+      setState(() => _error = error);
+      return;
+    }
+    context.go(widget.redirectTo ?? '/home');
+  }
+
+  Future<void> _continueAsGuest() async {
+    await context.read<AuthProvider>().continueAsGuest();
+    if (mounted) context.go('/home');
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.page),
+    final isLoading = context.watch<AuthProvider>().isLoading;
+
+    return AuthLayout(
+      children: [
+        const Text('Welcome back', style: AppText.display),
+        const SizedBox(height: AppSpacing.xs),
+        const Text('Sign in to continue shopping.', style: AppText.bodyMuted),
+        const SizedBox(height: AppSpacing.xl),
+        _DemoAccountBox(onFill: _fillDemo),
+        const SizedBox(height: AppSpacing.xl),
+        if (_error != null) ...[
+          AlertBanner(message: _error!, tone: AlertTone.error),
+          const SizedBox(height: AppSpacing.lg),
+        ],
+        AutofillGroup(
+          child: Column(
+            children: [
+              AppTextField(
+                label: 'Email',
+                controller: _email,
+                focusNode: _emailFocus,
+                hint: 'you@example.com',
+                errorText: _emailError,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.email],
+                onChanged: (_) => setState(() {}),
+                onSubmitted: (_) => _passwordFocus.requestFocus(),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              AppTextField(
+                label: 'Password',
+                controller: _password,
+                focusNode: _passwordFocus,
+                hint: 'At least 8 characters',
+                errorText: _passwordError,
+                isPassword: true,
+                maxLength: 72,
+                textInputAction: TextInputAction.go,
+                autofillHints: const [AutofillHints.password],
+                onChanged: (_) => setState(() {}),
+                onSubmitted: (_) => _signIn(),
+              ),
+            ],
+          ),
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(onPressed: () => context.push('/forgot-password'), child: const Text('Forgot password?')),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        AppButton(label: isLoading ? 'Signing in…' : 'Sign in', isLoading: isLoading, onPressed: _signIn),
+        const SizedBox(height: AppSpacing.sm),
+        AppButton(label: 'Continue as guest', variant: AppButtonVariant.text, onPressed: isLoading ? null : _continueAsGuest),
+        const SizedBox(height: AppSpacing.sm),
+        Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            const Align(alignment: Alignment.centerLeft, child: BrandLogo()),
-            const SizedBox(height: AppSpacing.xxxl),
-            const Text('Welcome back', style: AppText.display),
-            const SizedBox(height: AppSpacing.xs),
-            const Text('Placeholder sign-in. The full form comes in slice 2.', style: AppText.bodyMuted),
-            const SizedBox(height: AppSpacing.xxl),
-            AppButton(
-              label: 'Sign in with demo account',
-              isLoading: auth.isLoading,
-              onPressed: () async {
-                final error = await context.read<AuthProvider>().login(demoEmail, demoPassword);
-                if (!context.mounted) return;
-                if (error != null) return showAppToast(context, error);
-                context.go(redirectTo ?? '/home');
-              },
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppButton(
-              label: 'Continue as guest',
-              variant: AppButtonVariant.outline,
-              onPressed: () async {
-                await context.read<AuthProvider>().continueAsGuest();
-                if (context.mounted) context.go('/home');
-              },
-            ),
-            const SizedBox(height: AppSpacing.lg),
+            const Text('New to Mercato?', style: AppText.bodyMuted),
             TextButton(onPressed: () => context.push('/register'), child: const Text('Create an account')),
-            TextButton(onPressed: () => context.push('/forgot-password'), child: const Text('Forgot password?')),
           ],
         ),
+      ],
+    );
+  }
+}
+
+/// Mint box showing the demo credentials with a "Fill in" button.
+class _DemoAccountBox extends StatelessWidget {
+  final VoidCallback onFill;
+  const _DemoAccountBox({required this.onFill});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.md, AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.mintSoft,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        border: Border.all(color: const Color(0xFF6EE7B7)),
+      ),
+      child: Row(
+        children: [
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Demo account', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                SizedBox(height: 2),
+                Text('$demoEmail · $demoPassword', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+              ],
+            ),
+          ),
+          AppButton(label: 'Fill in', variant: AppButtonVariant.secondary, small: true, expanded: false, onPressed: onFill),
+        ],
       ),
     );
   }

@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Mercato is a mobile e-commerce app (Setec Institute year-4 project), split into three parts:
 
 - `backend/` — Spring Boot 4 / Java 21 REST API (`com.setec.ecommerce`). **All v1 endpoints are implemented and tested.**
-- `frontend-app/` — Flutter app (Android/iOS phones, portrait). **Not started:** `lib/main.dart` is still the default counter template.
+- `frontend-app/` — Flutter app (Android/iOS phones, portrait), built from the prototype in slices with mock data (not yet connected to the backend). See **Flutter app status** below.
 - `docs/` — the source of truth for behavior. Read the relevant doc before changing a feature.
   - `requirement.md` (scope, screen inventory SCR-001…022, system-wide business rules), `usecase.md`, `features/*.md` (per-feature specs), `api-convention.md`, `api-specification.md` (every endpoint, keyed by ApiId), `data-model.md`, `backend/backend-patterns.md`, `frontend/flutter-structure.md` (agreed Flutter folder structure, Provider + go_router, build order).
   - `prototype/` — approved, clickable HTML UI prototype (React + Babel + Tailwind via CDN, mock data in `localStorage`). It is the visual spec for the Flutter screens. Opens from `file://` with no build step; see `prototype/README.md`.
@@ -31,7 +31,40 @@ Config comes from env vars (`backend/.env.example`: `SPRING_PROFILES_ACTIVE`, `D
 
 ## Frontend commands
 
-Run from `frontend-app/`: `flutter pub get`, `flutter analyze`, `flutter test` (single: `flutter test test/<file>_test.dart`), `flutter run`. Lints come from `flutter_lints`.
+Run from `frontend-app/`:
+
+```bash
+flutter pub get
+flutter analyze                                   # must report "No issues found!"
+flutter test                                      # all unit + widget tests
+flutter test test/screens/auth_screens_test.dart  # one file
+flutter run -d "iPhone 16"                        # iOS simulator is the agreed test device
+flutter drive --driver=test_driver/integration_test.dart \
+  --target=integration_test/review_screenshots_test.dart -d "iPhone 16"   # review screenshots → build/screenshots/
+```
+
+## Flutter app status
+
+Built in five slices; the user reviews each slice before the next starts, and commits only when asked.
+
+| Slice | Scope | Status |
+|---|---|---|
+| 1 | Foundation: theme, models, mock data, services, providers, router, shared widgets, placeholder screens | Done |
+| 2 | Splash, Sign in, Create account, Reset password | Done |
+| 3 | Home, Categories (search, filter, sort), Product details | Next |
+| 4 | Cart, Checkout, Order confirmed, My orders, Order details | To do |
+| 5 | Wishlist, Notifications, Profile (edit sheet, log out) | To do |
+
+Screens not yet built in their slice are working placeholders (file header says `PLACEHOLDER (slice N)`) so every route can be clicked through.
+
+## Flutter architecture (full spec: `docs/frontend/flutter-structure.md`)
+
+- **Beginner structure, grouped by type:** `models/`, `services/`, `providers/` are each split into the same areas (auth, product, cart, order, wishlist, notification, user); `screens/<screen>/<screen>_screen.dart` with an optional `widgets/` subfolder for screen-only widgets; shared widgets in `widgets/{layout,buttons,inputs,cards,feedback}`; `theme.dart` (all colours/text/spacing tokens — use `AppColors`, `AppText`, `AppSpacing`, never raw values), `router.dart`, `utils/`.
+- **Data flow:** screen → `context.watch/read<XProvider>()` → provider (`ChangeNotifier`, holds `isLoading`/`error`) → service (every method returns a `Future`; mock data from `data/mock_data.dart` with a 300 ms delay, saved with `shared_preferences`). Connecting the Spring backend later means changing only the services. Screens never call services directly.
+- **Navigation (go_router):** `StatefulShellRoute` with 5 tabs (Home, Categories, Wishlist, Cart, Profile) rendered by `widgets/layout/main_shell.dart`; `/notifications` lives in the Home branch and `/orders`, `/orders/:id` in the Profile branch (tab bar stays visible). Full screen: splash, auth, `/product/:id`, `/checkout`, `/orders/:id/confirmed`. A redirect sends guests to `/login?from=…` for cart, wishlist, checkout, orders, profile and notifications.
+- **Assets:** only images the API never sends are bundled — Manrope font, Home banner photos (`assets/images/banners/`), logo/category icons/placeholder as SVG (`assets/icons/`, via `flutter_svg`). Product photos stay as URLs (`imageUrl`). UI icons use Material icons.
+- **Auth:** email + password only (demo `demo@mercato.app` / `Demo123!` until the backend is connected) — no Google/Apple sign-in.
+- **Tests:** `test/helpers.dart` gives a phone-sized screen and `wait`/`tapVisible` helpers. Use `wait(tester)` instead of `pumpAndSettle` — some animations (splash rings, skeletons) repeat forever.
 
 ## Backend architecture (read `docs/backend/backend-patterns.md` for the full rules)
 

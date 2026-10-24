@@ -104,6 +104,7 @@ frontend-app/
     │   ├── layout/
     │   │   ├── main_shell.dart            frame for the 5 tabs (screen + floating tab bar), used by router.dart
     │   │   ├── brand_logo.dart            Mercato logo mark + name
+    │   │   ├── auth_layout.dart           frame for Sign in / Create account / Reset password
     │   │   ├── app_header.dart            back button + centred title + action
     │   │   ├── bottom_nav_bar.dart        floating tab bar with cart badge
     │   │   └── action_dock.dart           sticky bottom bar (Add to cart, Checkout, Place order)
@@ -120,6 +121,7 @@ frontend-app/
     │   │   ├── product_card.dart          grid card (image, Add, heart)
     │   │   └── product_list_card.dart     horizontal card (wishlist, new arrivals)
     │   └── feedback/
+    │       ├── alert_banner.dart          inline success / error / info message
     │       ├── empty_state.dart
     │       ├── loading_skeleton.dart
     │       ├── status_badge.dart
@@ -223,7 +225,29 @@ Connecting the real backend later only means changing the service files. Provide
 
 The bottom tab bar shows **Home, Categories, Wishlist, Cart, Profile**. Product details, checkout and order confirmation open full screen without the tab bar.
 
-## 6. Build order
+## 6. Tests and review screenshots
+
+```
+frontend-app/
+├── test/                              unit + widget tests (flutter test)
+│   ├── helpers.dart                   phone-sized screen, wait/tap helpers
+│   ├── app_test.dart                  splash → sign in → guest → cart redirect
+│   ├── providers/                     provider rules (cart totals, stock limits, saving)
+│   ├── screens/                       screen behaviour (validation, messages)
+│   └── utils/                         validators and formatters
+├── integration_test/
+│   └── review_screenshots_test.dart   taps through finished screens on the simulator
+└── test_driver/
+    └── integration_test.dart          saves those screenshots to build/screenshots/
+```
+
+```bash
+flutter test                           # all unit + widget tests
+flutter drive --driver=test_driver/integration_test.dart \
+  --target=integration_test/review_screenshots_test.dart -d "iPhone 16"   # review screenshots
+```
+
+## 7. Build order
 
 Each slice is reviewed before the next one starts.
 
