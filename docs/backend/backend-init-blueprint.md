@@ -154,7 +154,7 @@ Required checks:
 | `spring.flyway.enabled` | `true` |
 | `spring.flyway.locations` | `classpath:db/migration` |
 | `spring.data.web.pageable.max-page-size` | `100` |
-| `server.port` | `${SERVER_PORT:8080}` |
+| `server.port` | `${SERVER_PORT:8081}` |
 | `app.jwt.issuer` | `mercato-api` |
 | `app.jwt.access-token-ttl` | `PT15M` |
 | `app.jwt.refresh-token-ttl` | `P7D` |

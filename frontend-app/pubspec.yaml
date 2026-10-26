@@ -16,6 +16,8 @@ dependencies:
   shared_preferences: ^2.5.6    # saves mock cart, wishlist, orders, profile on the device
   intl: ^0.20.3                 # money and date formatting
   flutter_svg: ^2.3.0           # shows the SVG logo and icons in assets/icons
+  dio: ^5.11.1                  # HTTP client for the Spring API (services/api/)
+  flutter_secure_storage: ^11.2.0 # keeps the sign-in tokens in the Keychain / Keystore
 
 dev_dependencies:
   flutter_test:

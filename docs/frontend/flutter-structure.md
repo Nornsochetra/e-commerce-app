@@ -13,6 +13,7 @@ How the Mercato Flutter app in `frontend-app/` is organised. The screens are bui
 | Font | Manrope, bundled in `assets/fonts/` |
 | Images | Product photos come from the API, so they stay as URLs. Images the API never sends are bundled in `assets/`: Home banner photos, the Mercato logo, category icons and the image placeholder. |
 | Vector images | SVG files shown with [`flutter_svg`](https://pub.dev/packages/flutter_svg); other UI icons use Flutter's built-in Material icons |
+| API | [`dio`](https://pub.dev/packages/dio) through one shared `ApiClient` (`services/api/`). Tokens in [`flutter_secure_storage`](https://pub.dev/packages/flutter_secure_storage). Screens show `ApiException.userMessage`, never the server's `message`. |
 | Sign-in | Email + password only (JWT from the backend) — no Google/Apple sign-in. Guests can browse and search. Cart, wishlist, checkout, orders, profile and notifications require sign-in (see [requirement.md §7.2](../requirement.md)). |
 | Test device | iOS simulator (iPhone 16) |
 
@@ -44,13 +45,21 @@ frontend-app/
     │   │   └── order_item.dart
     │   ├── notification/
     │   │   └── app_notification.dart
-    │   └── user/
-    │       └── user.dart
+    │   ├── user/
+    │   │   └── user.dart
+    │   └── common/
+    │       └── page_result.dart       one page of a paginated API list (items, page, hasNext)
     │
     ├── data/
     │   └── mock_data.dart             sample products, orders, notifications, user
     │
     ├── services/                      fetch and save data (return Future)
+    │   ├── api/                       shared by every service that calls the Spring API
+    │   │   ├── api_config.dart        base URL (--dart-define=API_BASE_URL=…), timeouts
+    │   │   ├── api_client.dart        requests, envelope, bearer token, refresh on 401
+    │   │   ├── api_exception.dart     error code → user-facing message
+    │   │   └── token_storage.dart     access/refresh tokens in the Keychain / Keystore
+    │   ├── health/health_service.dart GET /health
     │   ├── auth/auth_service.dart
     │   ├── product/product_service.dart
     │   ├── cart/cart_service.dart

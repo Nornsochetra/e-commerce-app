@@ -542,6 +542,11 @@ Card payment, cancellation, returns, push delivery, and notification preferences
 | `V7__create_orders.sql` | Creates orders/items with delivery and payment snapshots. | Applied |
 | `V8__create_notifications.sql` | Creates `notifications`. | Applied |
 
+**Development-only seed:** `db/dev/R__dev_seed_catalog.sql` adds the sample catalog (4 categories,
+6 products, badges) used by the Flutter app and the prototype. It is a repeatable migration that only
+the `dev` profile loads (`spring.flyway.locations` in `application-dev.yml`), so it never reaches
+other environments and never takes a version number. Re-running it restores the sample stock.
+
 ## 9. Deferred post-v1 decisions
 
 | Decision | Interim model |
