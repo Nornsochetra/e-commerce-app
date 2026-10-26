@@ -106,4 +106,42 @@ void main() {
     await wait(tester, 1500);
     await binding.takeScreenshot('s3_08_product_sold_out');
   });
+
+  testWidgets('slice 4: cart, checkout, confirmation and orders', (tester) async {
+    await (await SharedPreferences.getInstance()).clear();
+    await tester.pumpWidget(MercatoApp(authProvider: AuthProvider()));
+    await wait(tester, 3300);
+    await tap(tester, find.text('Fill in'));
+    await tap(tester, find.text('Sign in'));
+    await wait(tester, 1500);
+
+    await tap(tester, find.bySemanticsLabel(RegExp('^Cart')));
+    await wait(tester, 2000);
+    await binding.takeScreenshot('s4_01_cart');
+    await tap(tester, find.byTooltip('Remove Minimal Watch from cart'));
+    await wait(tester, 600);
+    await binding.takeScreenshot('s4_02_cart_removed_undo');
+    await tap(tester, find.text('Undo'));
+    await wait(tester, 600);
+
+    await tap(tester, find.text('Checkout'));
+    await wait(tester, 1500);
+    await binding.takeScreenshot('s4_03_checkout');
+    await tap(tester, find.text('Edit'));
+    await tester.enterText(find.byType(TextField).at(2), 'Phnom');
+    await tap(tester, find.text('Place order'));
+    await wait(tester, 400);
+    await binding.takeScreenshot('s4_04_checkout_errors');
+    await tester.enterText(find.byType(TextField).at(2), '12 Riverside Street, Phnom Penh');
+    await tap(tester, find.text('Place order'));
+    await wait(tester, 2000);
+    await binding.takeScreenshot('s4_05_order_confirmed');
+
+    await tap(tester, find.text('Track order'));
+    await wait(tester, 1500);
+    await binding.takeScreenshot('s4_06_order_detail');
+    await tap(tester, find.byTooltip('Go back'));
+    await wait(tester, 1500);
+    await binding.takeScreenshot('s4_07_orders');
+  });
 }

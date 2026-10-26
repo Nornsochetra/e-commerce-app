@@ -20,8 +20,12 @@ class MainShell extends StatelessWidget {
       bottomNavigationBar: BottomNavBar(
         currentIndex: navigationShell.currentIndex,
         cartCount: cartCount,
-        // Tapping the current tab again returns to that tab's first screen.
-        onTap: (index) => navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex),
+        onTap: (index) {
+          // A toast belongs to the tab it came from; it would otherwise cover the next tab's dock (Cart).
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          // Tapping the current tab again returns to that tab's first screen.
+          navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex);
+        },
       ),
     );
   }

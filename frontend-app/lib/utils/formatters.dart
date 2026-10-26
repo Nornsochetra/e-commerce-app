@@ -27,3 +27,13 @@ String formatLabel(String value) => value
     .where((w) => w.isNotEmpty)
     .map((w) => w[0].toUpperCase() + w.substring(1))
     .join(' ');
+
+/// Standard delivery arrives 2–4 days after the order: "Oct 28 – Oct 30".
+String formatDeliveryWindow(DateTime placedAt) {
+  final day = DateFormat('MMM d');
+  final start = placedAt.toLocal();
+  return '${day.format(start.add(const Duration(days: 2)))} – ${day.format(start.add(const Duration(days: 4)))}';
+}
+
+/// "cash_on_delivery" → "Cash on delivery"
+String formatPaymentMethod(String method) => method == 'cash_on_delivery' ? 'Cash on delivery' : formatLabel(method);

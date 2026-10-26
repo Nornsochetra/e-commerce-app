@@ -85,7 +85,9 @@ frontend-app/
     │   ├── cart/
     │   │   ├── cart_screen.dart
     │   │   └── widgets/cart_item_tile.dart
-    │   ├── checkout/checkout_screen.dart
+    │   ├── checkout/
+    │   │   ├── checkout_screen.dart
+    │   │   └── widgets/delivery_details.dart
     │   ├── order_confirmed/order_confirmed_screen.dart
     │   ├── orders/
     │   │   ├── orders_screen.dart
@@ -120,6 +122,8 @@ frontend-app/
     │   │   └── quantity_stepper.dart
     │   ├── cards/
     │   │   ├── product_image.dart         product photo (URL) with placeholder while loading
+    │   │   ├── app_card.dart              white card (or mint tint) used for summaries
+    │   │   ├── price_summary.dart         subtotal / delivery / total rows (cart, checkout, order)
     │   │   ├── product_card.dart          grid card (image, Add, heart)
     │   │   ├── product_grid.dart          2-column grid of product cards with cart/wishlist actions
     │   │   ├── product_list_card.dart     horizontal card (wishlist, new arrivals)
@@ -129,6 +133,7 @@ frontend-app/
     │       ├── empty_state.dart
     │       ├── loading_skeleton.dart
     │       ├── status_badge.dart
+    │       ├── order_status_badge.dart    Pending / Confirmed / Shipped / Delivered pill
     │       ├── app_bottom_sheet.dart
     │       └── app_toast.dart             snackbar with Undo / View cart
     │

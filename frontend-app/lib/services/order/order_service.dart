@@ -13,6 +13,7 @@ import '../notification/notification_service.dart';
 /// Loads orders and places new ones. Later: GET /orders, GET /orders/{id}, POST /orders.
 class OrderService {
   static const _key = 'orders';
+  static const _keysKey = 'order_idempotency_keys'; // Idempotency-Key → order id
   final _notificationService = NotificationService();
 
   Future<List<Order>> getOrders() async {
@@ -25,8 +26,22 @@ class OrderService {
 
   /// Creates an order from the cart. Like the backend, the totals are calculated here, not by the screen,
   /// and placing an order also creates an "Order confirmed" notification.
-  Future<Order> placeOrder({required List<CartItem> items, required String recipientName, required String email, required String address}) async {
+  /// Sending the same [idempotencyKey] again returns the first order instead of creating a duplicate
+  /// (the backend's Idempotency-Key header).
+  Future<Order> placeOrder({
+    required String idempotencyKey,
+    required List<CartItem> items,
+    required String recipientName,
+    required String email,
+    required String address,
+  }) async {
     await Future.delayed(const Duration(milliseconds: 900));
+    final prefs = await SharedPreferences.getInstance();
+    final keys = Map<String, dynamic>.from(jsonDecode(prefs.getString(_keysKey) ?? '{}') as Map);
+    final orders = await getOrders();
+    final replayId = keys[idempotencyKey];
+    if (replayId != null) return orders.firstWhere((o) => o.id == replayId);
+
     final now = DateTime.now();
     final subtotal = items.fold<double>(0, (sum, i) => sum + i.lineTotal);
     final order = Order(
@@ -43,10 +58,9 @@ class OrderService {
       createdAt: now,
       updatedAt: now,
     );
-    final orders = await getOrders();
     orders.insert(0, order);
-    final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_key, jsonEncode(orders.map((e) => e.toJson()).toList()));
+    await prefs.setString(_keysKey, jsonEncode({...keys, idempotencyKey: order.id}));
     await _notificationService.addNotification(
       type: NotificationType.order,
       title: 'Order confirmed',

@@ -42,13 +42,20 @@ class OrderProvider extends ChangeNotifier {
   }
 
   /// Places an order from the cart items. Returns the new order, or null if it failed or is already running.
-  Future<Order?> placeOrder({required List<CartItem> items, required String recipientName, required String email, required String address}) async {
+  /// Use the same [idempotencyKey] when retrying, so a retry can never create a second order.
+  Future<Order?> placeOrder({
+    required String idempotencyKey,
+    required List<CartItem> items,
+    required String recipientName,
+    required String email,
+    required String address,
+  }) async {
     if (isPlacing) return null; // guard against double taps
     isPlacing = true;
     notifyListeners();
     try {
-      final order = await _service.placeOrder(items: items, recipientName: recipientName, email: email, address: address);
-      orders = [order, ...orders];
+      final order = await _service.placeOrder(idempotencyKey: idempotencyKey, items: items, recipientName: recipientName, email: email, address: address);
+      orders = [order, ...orders.where((o) => o.id != order.id)];
       return order;
     } catch (_) {
       return null;

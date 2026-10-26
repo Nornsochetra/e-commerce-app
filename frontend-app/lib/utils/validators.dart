@@ -35,3 +35,6 @@ int passwordStrength(String password) {
   if (RegExp(r'[^A-Za-z0-9]').hasMatch(password) || password.length >= 12) score++;
   return score > 4 ? 4 : score;
 }
+
+/// Checkout delivery address: at least a street and a city.
+String? validateAddress(String? value) => (value?.trim().length ?? 0) < 8 ? 'Enter a full delivery address (street, city).' : null;
