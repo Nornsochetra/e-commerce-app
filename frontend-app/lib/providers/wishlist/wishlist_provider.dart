@@ -10,6 +10,9 @@ class WishlistProvider extends ChangeNotifier {
   bool isLoading = false;
 
   int get count => productIds.length;
+
+  /// Saved product ids, most recently saved first (the order the Wishlist screen shows).
+  List<String> get newestFirst => productIds.reversed.toList();
   bool contains(String productId) => productIds.contains(productId);
 
   Future<void> load() async {

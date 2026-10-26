@@ -144,4 +144,42 @@ void main() {
     await wait(tester, 1500);
     await binding.takeScreenshot('s4_07_orders');
   });
+
+  testWidgets('slice 5: wishlist, notifications and profile', (tester) async {
+    await (await SharedPreferences.getInstance()).clear();
+    await tester.pumpWidget(MercatoApp(authProvider: AuthProvider()));
+    await wait(tester, 3300);
+    await tap(tester, find.text('Fill in'));
+    await tap(tester, find.text('Sign in'));
+    await wait(tester, 1500);
+
+    await tap(tester, find.bySemanticsLabel(RegExp('^Wishlist')));
+    await wait(tester, 2000);
+    await binding.takeScreenshot('s5_01_wishlist');
+
+    await tap(tester, find.bySemanticsLabel(RegExp('^Profile')));
+    await wait(tester, 1000);
+    await binding.takeScreenshot('s5_02_profile');
+    await tap(tester, find.text('Edit'));
+    await wait(tester, 800);
+    await tester.enterText(find.byType(TextField).at(1), 'alex@');
+    await tap(tester, find.text('Save changes'));
+    await wait(tester, 400);
+    await binding.takeScreenshot('s5_03_edit_profile_errors');
+    await tap(tester, find.text('Cancel'));
+    await wait(tester, 800);
+    await binding.takeScreenshot('s5_04_discard_changes');
+    await tap(tester, find.text('Discard'));
+    await wait(tester, 800);
+
+    await tap(tester, find.byTooltip(RegExp('^Notifications')));
+    await wait(tester, 1500);
+    await binding.takeScreenshot('s5_05_notifications');
+
+    await tap(tester, find.bySemanticsLabel(RegExp('^Profile')));
+    await wait(tester, 800);
+    await tap(tester, find.text('Log out'));
+    await wait(tester, 800);
+    await binding.takeScreenshot('s5_06_log_out_confirm');
+  });
 }

@@ -135,6 +135,7 @@ frontend-app/
     │       ├── status_badge.dart
     │       ├── order_status_badge.dart    Pending / Confirmed / Shipped / Delivered pill
     │       ├── app_bottom_sheet.dart
+    │       ├── confirm_sheet.dart         "Are you sure?" sheet (log out, reset, discard edits)
     │       └── app_toast.dart             snackbar with Undo / View cart
     │
     └── utils/

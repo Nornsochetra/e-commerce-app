@@ -19,15 +19,22 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> update({required String name, required String email, required String phone}) async {
-    if (user == null) return;
+  /// Saves the profile. Returns false when saving failed (the screen keeps the form open).
+  Future<bool> update({required String name, required String email, required String phone}) async {
+    if (user == null || isSaving) return false;
     isSaving = true;
     notifyListeners();
-    final updated = user!.copyWith(name: name.trim(), email: email.trim().toLowerCase(), phone: phone.trim());
-    await Future.delayed(const Duration(milliseconds: 400));
-    await _service.saveUser(updated);
-    user = updated;
-    isSaving = false;
-    notifyListeners();
+    try {
+      final updated = user!.copyWith(name: name.trim(), email: email.trim().toLowerCase(), phone: phone.trim());
+      await Future.delayed(const Duration(milliseconds: 400));
+      await _service.saveUser(updated);
+      user = updated;
+      return true;
+    } catch (_) {
+      return false;
+    } finally {
+      isSaving = false;
+      notifyListeners();
+    }
   }
 }

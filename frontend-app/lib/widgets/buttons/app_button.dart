@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme.dart';
 
 /// Button styles used across the app.
-enum AppButtonVariant { primary, secondary, outline, danger, text }
+enum AppButtonVariant { primary, secondary, outline, danger, dangerSolid, text }
 
 /// Pill-shaped button. Shows a spinner and ignores taps while [isLoading] is true.
 class AppButton extends StatelessWidget {
@@ -38,6 +38,7 @@ class AppButton extends StatelessWidget {
       AppButtonVariant.secondary => (AppColors.mint, AppColors.primaryDeep, BorderSide.none),
       AppButtonVariant.outline => (AppColors.surface, AppColors.text, const BorderSide(color: AppColors.line, width: 1.5)),
       AppButtonVariant.danger => (AppColors.errorBg, const Color(0xFFB91C1C), BorderSide.none),
+      AppButtonVariant.dangerSolid => (AppColors.error, Colors.white, BorderSide.none),
       AppButtonVariant.text => (Colors.transparent, AppColors.textMuted, BorderSide.none),
     };
 

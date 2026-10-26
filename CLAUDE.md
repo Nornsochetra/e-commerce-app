@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Mercato is a mobile e-commerce app (Setec Institute year-4 project), split into three parts:
 
 - `backend/` — Spring Boot 4 / Java 21 REST API (`com.setec.ecommerce`). **All v1 endpoints are implemented and tested.**
-- `frontend-app/` — Flutter app (Android/iOS phones, portrait), built from the prototype in slices with mock data (not yet connected to the backend). See **Flutter app status** below.
+- `frontend-app/` — Flutter app (Android/iOS phones, portrait), all screens built from the prototype with mock data (not yet connected to the backend). See **Flutter app status** below.
 - `docs/` — the source of truth for behavior. Read the relevant doc before changing a feature.
   - `requirement.md` (scope, screen inventory SCR-001…022, system-wide business rules), `usecase.md`, `features/*.md` (per-feature specs), `api-convention.md`, `api-specification.md` (every endpoint, keyed by ApiId), `data-model.md`, `backend/backend-patterns.md`, `frontend/flutter-structure.md` (agreed Flutter folder structure, Provider + go_router, build order).
   - `prototype/` — approved, clickable HTML UI prototype (React + Babel + Tailwind via CDN, mock data in `localStorage`). It is the visual spec for the Flutter screens. Opens from `file://` with no build step; see `prototype/README.md`.
@@ -53,9 +53,9 @@ Built in five slices; the user reviews each slice before the next starts, and co
 | 2 | Splash, Sign in, Create account, Reset password | Done |
 | 3 | Home, Categories (search, filter, sort), Product details | Done |
 | 4 | Cart, Checkout, Order confirmed, My orders, Order details | Done |
-| 5 | Wishlist, Notifications, Profile (edit sheet, log out) | Next |
+| 5 | Wishlist, Notifications, Profile (edit sheet, log out) | Done |
 
-Screens not yet built in their slice are working placeholders (file header says `PLACEHOLDER (slice N)`) so every route can be clicked through.
+All 15 screens are built from the prototype. Next step: connect the services to the Spring backend (only `services/` should change).
 
 ## Flutter architecture (full spec: `docs/frontend/flutter-structure.md`)
 
