@@ -32,12 +32,13 @@ class _EditProfileFormState extends State<_EditProfileForm> {
   late final _phone = TextEditingController(text: widget.user.phone);
   bool _showErrors = false;
   String? _saveError;
+  String? _takenEmail; // the server said this email belongs to another account
 
   bool get _dirty => _name.text != widget.user.name || _email.text != widget.user.email || _phone.text != widget.user.phone;
 
   Map<String, String> get _errors => {
         'name': ?validateRequired(_name.text, 'Enter your full name.'),
-        'email': ?validateEmail(_email.text),
+        'email': ?(validateEmail(_email.text) ?? (_email.text.trim().toLowerCase() == _takenEmail ? 'An account with this email already exists.' : null)),
         'phone': ?validatePhone(_phone.text),
       };
 
@@ -70,12 +71,16 @@ class _EditProfileFormState extends State<_EditProfileForm> {
       _saveError = null;
     });
     if (_errors.isNotEmpty) return;
-    final ok = await context.read<UserProvider>().update(name: _name.text, email: _email.text, phone: _phone.text);
+    final users = context.read<UserProvider>();
+    final result = await users.update(name: _name.text, email: _email.text, phone: _phone.text);
     if (!mounted) return;
-    if (ok) {
-      Navigator.pop(context, true);
-    } else {
-      setState(() => _saveError = 'We couldn’t save your profile. Please try again.');
+    switch (result) {
+      case ProfileSaveResult.saved:
+        Navigator.pop(context, true);
+      case ProfileSaveResult.emailTaken:
+        setState(() => _takenEmail = _email.text.trim().toLowerCase());
+      case ProfileSaveResult.failed:
+        setState(() => _saveError = users.saveError ?? 'We couldn’t save your profile. Please try again.');
     }
   }
 

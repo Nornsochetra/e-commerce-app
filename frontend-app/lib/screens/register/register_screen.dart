@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth/auth_provider.dart';
-import '../../providers/user/user_provider.dart';
 import '../../theme.dart';
 import '../../utils/validators.dart';
 import '../../widgets/buttons/app_button.dart';
@@ -69,8 +68,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _error = error);
       return;
     }
-    await context.read<UserProvider>().load(); // show the new name on Profile
-    if (mounted) context.go('/home');
+    context.go('/home'); // the profile loads by itself after sign-in
   }
 
   @override

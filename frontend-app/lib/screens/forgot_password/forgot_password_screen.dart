@@ -25,6 +25,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool _submitted = false;
   bool _sending = false;
   bool _sent = false;
+  String? _error; // only when the request couldn't be sent (offline)
 
   String? get _emailError => _submitted ? validateEmail(_email.text) : null;
 
@@ -40,12 +41,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() => _submitted = true);
     if (_emailError != null) return _emailFocus.requestFocus();
     FocusScope.of(context).unfocus();
-    setState(() => _sending = true);
-    await context.read<AuthProvider>().requestPasswordReset(_email.text);
+    setState(() {
+      _sending = true;
+      _error = null;
+    });
+    final error = await context.read<AuthProvider>().requestPasswordReset(_email.text);
     if (!mounted) return;
     setState(() {
       _sending = false;
-      _sent = true;
+      _sent = error == null;
+      _error = error;
     });
   }
 
@@ -75,7 +80,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ]),
           ),
           const SizedBox(height: AppSpacing.xl),
-          const AlertBanner(message: 'Demo app: no real email is sent yet.', tone: AlertTone.info),
+          const AlertBanner(message: 'Email delivery isn’t set up yet, so no email is actually sent.', tone: AlertTone.info),
           const SizedBox(height: AppSpacing.xxl),
           AppButton(label: 'Back to sign in', onPressed: () => context.go('/login')),
           const SizedBox(height: AppSpacing.sm),
@@ -83,6 +88,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ] else ...[
           const Text('Enter the email you use for Mercato and we’ll send reset instructions.', style: AppText.bodyMuted),
           const SizedBox(height: AppSpacing.xxl),
+          if (_error != null) ...[
+            AlertBanner(message: _error!, tone: AlertTone.error),
+            const SizedBox(height: AppSpacing.lg),
+          ],
           AppTextField(
             label: 'Email',
             controller: _email,

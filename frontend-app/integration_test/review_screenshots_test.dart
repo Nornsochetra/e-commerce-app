@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_app/main.dart';
 import 'package:frontend_app/providers/auth/auth_provider.dart';
+import 'package:frontend_app/services/api/token_storage.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Walks through the finished screens on a real simulator and saves screenshots for review.
+/// Sign-in uses the real API, so start the backend first (see CLAUDE.md).
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -15,6 +17,12 @@ void main() {
     }
   }
 
+  /// Empty device storage and no saved sign-in (tokens live in secure storage, not SharedPreferences).
+  Future<void> freshStart() async {
+    await (await SharedPreferences.getInstance()).clear();
+    await SecureTokenStorage().clear();
+  }
+
   Future<void> tap(WidgetTester tester, Finder finder) async {
     await tester.ensureVisible(finder);
     await tester.pump();
@@ -22,7 +30,7 @@ void main() {
   }
 
   testWidgets('slice 2: splash and sign-in screens', (tester) async {
-    await (await SharedPreferences.getInstance()).clear();
+    await freshStart();
     await tester.pumpWidget(MercatoApp(authProvider: AuthProvider()));
     await wait(tester, 1100);
     await binding.takeScreenshot('s2_01_splash');
@@ -65,7 +73,7 @@ void main() {
   });
 
   testWidgets('slice 3: home, categories and product details', (tester) async {
-    await (await SharedPreferences.getInstance()).clear();
+    await freshStart();
     await tester.pumpWidget(MercatoApp(authProvider: AuthProvider()));
     await wait(tester, 3300);
     await tap(tester, find.text('Fill in'));
@@ -108,7 +116,7 @@ void main() {
   });
 
   testWidgets('slice 4: cart, checkout, confirmation and orders', (tester) async {
-    await (await SharedPreferences.getInstance()).clear();
+    await freshStart();
     await tester.pumpWidget(MercatoApp(authProvider: AuthProvider()));
     await wait(tester, 3300);
     await tap(tester, find.text('Fill in'));
@@ -146,7 +154,7 @@ void main() {
   });
 
   testWidgets('slice 5: wishlist, notifications and profile', (tester) async {
-    await (await SharedPreferences.getInstance()).clear();
+    await freshStart();
     await tester.pumpWidget(MercatoApp(authProvider: AuthProvider()));
     await wait(tester, 3300);
     await tap(tester, find.text('Fill in'));

@@ -135,7 +135,7 @@ void main() {
     expect(find.text('Welcome back'), findsOneWidget);
   });
 
-  testWidgets('reset demo data restores the sample cart', (tester) async {
+  testWidgets('reset demo data restores the sample cart and keeps you signed in', (tester) async {
     await startSignedIn(tester);
     await openTab(tester, 'Cart');
     await tester.tap(find.byTooltip('Remove Minimal Watch from cart'));
@@ -146,13 +146,10 @@ void main() {
     await tapAboveTabBar(tester, find.text('Reset demo data'));
     await wait(tester, steps: 2);
     await tester.tap(find.widgetWithText(AppButton, 'Reset'));
-    await wait(tester, steps: 14);
-    expect(find.text('Welcome back'), findsOneWidget);
+    await wait(tester, steps: 4);
+    expect(find.text('Demo data restored'), findsOneWidget);
+    expect(find.text('Welcome back'), findsNothing); // still signed in; the account is on the server
 
-    await tester.tap(find.text('Fill in'));
-    await tester.pump();
-    await tapVisible(tester, find.text('Sign in'));
-    await wait(tester);
     await openTab(tester, 'Cart');
     expect(find.text('3 items'), findsOneWidget);
   });

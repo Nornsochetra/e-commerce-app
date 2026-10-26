@@ -46,12 +46,13 @@ class ProfileScreen extends StatelessWidget {
     if (context.mounted) context.go('/login');
   }
 
-  /// Clears everything the mock services saved and reloads it, then starts again from the splash.
+  /// Restores the sample cart, wishlist, orders and notifications that are still mock data on this device.
+  /// Your account and profile live on the server and aren't touched.
   Future<void> _resetDemo(BuildContext context) async {
     final ok = await showConfirmSheet(
       context,
       title: 'Reset demo data?',
-      message: 'This restores the original sample cart, wishlist, notifications, orders and profile on this device. You’ll need to sign in again.',
+      message: 'This restores the original sample cart, wishlist, notifications and orders on this device. Your account isn’t changed.',
       confirmLabel: 'Reset',
     );
     if (!ok || !context.mounted) return;
@@ -61,17 +62,17 @@ class ProfileScreen extends StatelessWidget {
       context.read<WishlistProvider>().load,
       context.read<OrderProvider>().load,
       context.read<NotificationProvider>().load,
-      context.read<UserProvider>().load,
     ];
     await resetDemoData();
     products.resetFilter();
     await Future.wait([for (final load in reloads) load()]);
-    if (context.mounted) context.go('/splash');
+    if (context.mounted) showAppToast(context, 'Demo data restored');
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<UserProvider>().user;
+    final users = context.watch<UserProvider>();
+    final user = users.user;
     final orders = context.watch<OrderProvider>().orders;
     final saved = context.watch<WishlistProvider>().count;
     final inCart = context.watch<CartProvider>().itemCount;
@@ -92,7 +93,17 @@ class ProfileScreen extends StatelessWidget {
       body: ListView(
         padding: EdgeInsets.fromLTRB(AppSpacing.page, AppSpacing.xs, AppSpacing.page, MediaQuery.paddingOf(context).bottom + AppSpacing.xxl),
         children: [
-          if (user == null)
+          if (user == null && users.error != null)
+            AppCard(
+              child: Column(
+                children: [
+                  Text(users.error!, style: AppText.bodyMuted, textAlign: TextAlign.center),
+                  const SizedBox(height: AppSpacing.md),
+                  AppButton(label: 'Try again', variant: AppButtonVariant.outline, small: true, expanded: false, onPressed: users.load),
+                ],
+              ),
+            )
+          else if (user == null)
             const ListSkeleton(count: 1)
           else
             AppCard(
@@ -151,7 +162,7 @@ class ProfileScreen extends StatelessWidget {
             const _MenuRow(icon: Icons.settings_outlined, title: 'Settings', neutral: true),
             const _MenuRow(icon: Icons.help_outline_rounded, title: 'About Mercato', neutral: true),
             const _MenuRow(icon: Icons.call_outlined, title: 'Contact us', neutral: true),
-            _MenuRow(icon: Icons.refresh_rounded, title: 'Reset demo data', subtitle: 'Restore the sample cart, orders and profile', neutral: true, onTap: () => _resetDemo(context)),
+            _MenuRow(icon: Icons.refresh_rounded, title: 'Reset demo data', subtitle: 'Restore the sample cart, orders and notifications', neutral: true, onTap: () => _resetDemo(context)),
           ]),
 
           const SizedBox(height: AppSpacing.xxl),

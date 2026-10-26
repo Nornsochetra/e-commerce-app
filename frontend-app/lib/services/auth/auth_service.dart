@@ -1,60 +1,70 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../data/mock_data.dart';
-import '../../models/user/user.dart';
-import '../user/user_service.dart';
+import '../api/api_client.dart';
+import '../api/api_exception.dart';
+import '../api/token_storage.dart';
 
-/// Sign-in state saved on the device.
+/// How the app was left last time.
 enum SessionType { signedIn, guest }
 
-/// Thrown when sign-in fails; [message] is safe to show to the user.
-class AuthException implements Exception {
-  final String message;
-  const AuthException(this.message);
-}
-
-/// Signs users in and out. Mock: accepts only the demo account.
-/// Later: POST /auth/login, /auth/register, /auth/logout, /auth/forgot-password.
+/// Signs users in and out through the API (AUT-0201 … AUT-0205).
+/// The tokens are kept by [ApiClient.tokens]; "continue as guest" is only a flag on this device.
+/// Failures throw [ApiException]; show its `userMessage`.
 class AuthService {
-  static const _sessionKey = 'session';
-  final _userService = UserService();
+  static const _guestKey = 'guest_session';
+  final ApiClient _api;
 
-  /// The saved session, or null when signed out.
+  AuthService([ApiClient? api]) : _api = api ?? ApiClient.instance;
+
+  /// Signed in when tokens are saved, guest when the user chose that, otherwise null (signed out).
+  /// Whether the tokens still work is found out by the first request (it refreshes or signs out).
   Future<SessionType?> getSession() async {
+    if (await _api.tokens.read() != null) return SessionType.signedIn;
     final prefs = await SharedPreferences.getInstance();
-    final value = prefs.getString(_sessionKey);
-    return value == null ? null : SessionType.values.byName(value);
+    return (prefs.getBool(_guestKey) ?? false) ? SessionType.guest : null;
   }
 
   Future<void> login(String email, String password) async {
-    await Future.delayed(mockDelay);
-    if (email.trim().toLowerCase() != demoEmail || password != demoPassword) {
-      throw const AuthException('That email and password don’t match. Use the demo account, or continue as a guest.');
-    }
-    await _saveSession(SessionType.signedIn);
+    final data = await _api.post('/auth/login', body: {'email': email.trim(), 'password': password}, auth: false);
+    await _startSession(data as Map<String, dynamic>);
   }
 
-  /// Creates the account and signs in immediately (no email verification in v1).
+  /// Creates the account and signs in right away (no email verification in v1).
+  /// The register endpoint has no phone field, so a phone number is saved with a profile update afterwards.
+  /// If only that second step fails, the account still exists and the user is signed in.
   Future<void> register({required String name, required String email, required String phone, required String password}) async {
-    await Future.delayed(mockDelay);
-    final current = await _userService.getUser();
-    final user = User(id: current.id, name: name.trim(), email: email.trim().toLowerCase(), phone: phone.trim(), memberSince: DateTime.now());
-    await _userService.saveUser(user);
-    await _saveSession(SessionType.signedIn);
+    final data = await _api.post('/auth/register', body: {'name': name.trim(), 'email': email.trim(), 'password': password}, auth: false);
+    await _startSession(data as Map<String, dynamic>);
+    if (phone.trim().isEmpty) return;
+    try {
+      await _api.patch('/me/profile', body: {'phone': phone.trim()});
+    } on ApiException {
+      // The phone can be added later on Profile.
+    }
   }
 
-  Future<void> continueAsGuest() => _saveSession(SessionType.guest);
+  Future<void> continueAsGuest() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_guestKey, true);
+  }
 
+  /// Revokes every token of the account on the server, then forgets them here.
+  /// Signing out always works locally, even when the server can't be reached.
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_sessionKey);
+    try {
+      if (await _api.tokens.read() != null) await _api.post('/auth/logout');
+    } on ApiException {
+      // Offline or already expired: the local sign-out below is what matters.
+    }
+    await _api.tokens.clear();
   }
 
-  /// Always succeeds, so the app never reveals whether an account exists.
-  Future<void> requestPasswordReset(String email) => Future.delayed(mockDelay);
+  /// The server always answers the same way, so the app never reveals whether an account exists.
+  Future<void> requestPasswordReset(String email) => _api.post('/auth/forgot-password', body: {'email': email.trim()}, auth: false);
 
-  Future<void> _saveSession(SessionType type) async {
+  Future<void> _startSession(Map<String, dynamic> data) async {
+    await _api.tokens.save(TokenPair.fromJson(data));
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_sessionKey, type.name);
+    await prefs.remove(_guestKey);
   }
 }

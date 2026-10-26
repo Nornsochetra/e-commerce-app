@@ -39,7 +39,11 @@ class _MercatoAppState extends State<MercatoApp> {
         ChangeNotifierProvider(create: (_) => WishlistProvider()..load()),
         ChangeNotifierProvider(create: (_) => OrderProvider()..load()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()..load()),
-        ChangeNotifierProvider(create: (_) => UserProvider()..load()),
+        // The profile follows sign-in: loaded after signing in, cleared after signing out.
+        ChangeNotifierProxyProvider<AuthProvider, UserProvider>(
+          create: (_) => UserProvider(),
+          update: (_, auth, user) => user!..syncWith(auth.status),
+        ),
       ],
       child: MaterialApp.router(
         title: 'Mercato',

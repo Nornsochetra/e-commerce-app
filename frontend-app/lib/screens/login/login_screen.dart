@@ -1,9 +1,10 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../data/mock_data.dart';
 import '../../providers/auth/auth_provider.dart';
+import '../../services/auth/dev_account.dart';
 import '../../theme.dart';
 import '../../utils/validators.dart';
 import '../../widgets/buttons/app_button.dart';
@@ -11,8 +12,8 @@ import '../../widgets/feedback/alert_banner.dart';
 import '../../widgets/inputs/app_text_field.dart';
 import '../../widgets/layout/auth_layout.dart';
 
-/// Sign in with email + password (prototype: login.html).
-/// Until the backend is connected, only the demo account works.
+/// Sign in with email + password (prototype: login.html) through POST /auth/login.
+/// Debug builds offer the backend's seeded dev account as "Fill in".
 class LoginScreen extends StatefulWidget {
   final String? redirectTo; // where to go after signing in (set when a guest opened a protected screen)
   const LoginScreen({super.key, this.redirectTo});
@@ -50,8 +51,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _fillDemo() {
     setState(() {
-      _email.text = demoEmail;
-      _password.text = demoPassword;
+      _email.text = devAccountEmail;
+      _password.text = devAccountPassword;
       _error = null;
     });
   }
@@ -81,7 +82,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AuthProvider>().isLoading;
+    final auth = context.watch<AuthProvider>();
+    final isLoading = auth.isLoading;
 
     return AuthLayout(
       children: [
@@ -89,8 +91,14 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: AppSpacing.xs),
         const Text('Sign in to continue shopping.', style: AppText.bodyMuted),
         const SizedBox(height: AppSpacing.xl),
-        _DemoAccountBox(onFill: _fillDemo),
-        const SizedBox(height: AppSpacing.xl),
+        if (kDebugMode) ...[
+          _DemoAccountBox(onFill: _fillDemo),
+          const SizedBox(height: AppSpacing.xl),
+        ],
+        if (auth.sessionExpired && _error == null) ...[
+          const AlertBanner(message: 'Your session has ended. Please sign in again.'),
+          const SizedBox(height: AppSpacing.lg),
+        ],
         if (_error != null) ...[
           AlertBanner(message: _error!, tone: AlertTone.error),
           const SizedBox(height: AppSpacing.lg),
@@ -149,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-/// Mint box showing the demo credentials with a "Fill in" button.
+/// Mint box showing the dev account with a "Fill in" button (debug builds only).
 class _DemoAccountBox extends StatelessWidget {
   final VoidCallback onFill;
   const _DemoAccountBox({required this.onFill});
@@ -169,9 +177,9 @@ class _DemoAccountBox extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Demo account', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                Text('Dev account', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
                 SizedBox(height: 2),
-                Text('$demoEmail · $demoPassword', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                Text('$devAccountEmail · $devAccountPassword', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
               ],
             ),
           ),

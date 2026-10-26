@@ -6,17 +6,13 @@ import '../models/order/order.dart';
 import '../models/order/order_item.dart';
 import '../models/product/category.dart';
 import '../models/product/product.dart';
-import '../models/user/user.dart';
 
-/// Sample data used until the app is connected to the Spring backend.
+/// Sample data for the parts not yet connected to the Spring backend (catalog, cart, wishlist,
+/// orders, notifications). Sign-in and the profile already come from the API.
 /// Same products, orders and notifications as the HTML prototype.
 
 /// Pretend network delay used by every mock service call.
 const mockDelay = Duration(milliseconds: 300);
-
-/// Demo sign-in (also shown on the login screen).
-const demoEmail = 'demo@mercato.app';
-const demoPassword = 'Demo123!';
 
 /// Flat standard delivery fee (USD), as in the requirements.
 const deliveryFeeUsd = 4.0;
@@ -125,14 +121,6 @@ List<CartItem> mockCartItems() => [_cartItem(mockProducts[0], 1), _cartItem(mock
 
 /// Starting wishlist: sneakers + sunglasses.
 List<String> mockWishlistIds() => [mockProducts[1].id, mockProducts[4].id];
-
-User mockUser() => User(
-      id: 'a1e00000-0000-4000-8000-000000000001',
-      name: 'Alex Morgan',
-      email: 'alex@example.com',
-      phone: '+855 12 345 678',
-      memberSince: DateTime.utc(2026, 1, 14),
-    );
 
 /// Two sample orders, dated relative to today.
 List<Order> mockOrders() {

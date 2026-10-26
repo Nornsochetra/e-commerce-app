@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_app/models/common/page_result.dart';
@@ -7,32 +5,11 @@ import 'package:frontend_app/services/api/api_client.dart';
 import 'package:frontend_app/services/api/api_exception.dart';
 import 'package:frontend_app/services/api/token_storage.dart';
 
-/// Answers requests with [handler] instead of the network, and remembers every request.
-class FakeAdapter implements HttpClientAdapter {
-  final Future<(int, Map<String, dynamic>)> Function(RequestOptions request) handler;
-  final requests = <RequestOptions>[];
-  FakeAdapter(this.handler);
+import '../fake_api.dart';
 
-  @override
-  Future<ResponseBody> fetch(RequestOptions options, Stream<List<int>>? requestStream, Future<void>? cancelFuture) async {
-    requests.add(options);
-    final (status, body) = await handler(options);
-    return ResponseBody.fromString(jsonEncode(body), status, headers: {
-      Headers.contentTypeHeader: [Headers.jsonContentType],
-    });
-  }
+Map<String, dynamic> ok(Object? data) => okEnvelope(data);
 
-  @override
-  void close({bool force = false}) {}
-}
-
-Map<String, dynamic> ok(Object? data) => {'status': {'code': 'SUCCESS', 'message': 'Success'}, 'data': data, 'common': {'requestId': 'r1', 'apiId': 'X', 'timestamp': ''}};
-
-Map<String, dynamic> fail(String code, {List<Map<String, dynamic>> details = const []}) => {
-      'status': {'code': code, 'message': 'dev text'},
-      'common': {'requestId': 'r2', 'apiId': 'X', 'timestamp': ''},
-      'error': {'code': code, 'type': 'X', 'message': 'dev text', 'details': details},
-    };
+Map<String, dynamic> fail(String code, {List<Map<String, dynamic>> details = const []}) => errorEnvelope(code, details: details);
 
 (ApiClient, FakeAdapter, MemoryTokenStorage) client(Future<(int, Map<String, dynamic>)> Function(RequestOptions r) handler) {
   final adapter = FakeAdapter(handler);

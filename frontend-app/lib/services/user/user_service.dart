@@ -1,23 +1,17 @@
-import 'dart:convert';
-
-import 'package:shared_preferences/shared_preferences.dart';
-
-import '../../data/mock_data.dart';
 import '../../models/user/user.dart';
+import '../api/api_client.dart';
 
-/// Loads and saves the customer profile. Later: GET /auth/me, PATCH /me/profile.
+/// The signed-in customer's profile: GET /auth/me (AUT-0601) and PATCH /me/profile (USR-0401).
+/// Failures throw ApiException.
 class UserService {
-  static const _key = 'user';
+  final ApiClient _api;
+  UserService([ApiClient? api]) : _api = api ?? ApiClient.instance;
 
-  Future<User> getUser() async {
-    await Future.delayed(mockDelay);
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    return raw == null ? mockUser() : User.fromJson(jsonDecode(raw) as Map<String, dynamic>);
-  }
+  Future<User> getUser() async => User.fromJson(await _api.get('/auth/me') as Map<String, dynamic>);
 
-  Future<void> saveUser(User user) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, jsonEncode(user.toJson()));
+  /// Saves name, email and phone. An empty phone clears it; name and email can't be cleared.
+  Future<User> updateProfile({required String name, required String email, required String phone}) async {
+    final data = await _api.patch('/me/profile', body: {'name': name.trim(), 'email': email.trim(), 'phone': phone.trim()});
+    return User.fromJson(data as Map<String, dynamic>);
   }
 }

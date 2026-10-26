@@ -60,13 +60,15 @@ frontend-app/
     │   │   ├── api_exception.dart     error code → user-facing message
     │   │   └── token_storage.dart     access/refresh tokens in the Keychain / Keystore
     │   ├── health/health_service.dart GET /health
-    │   ├── auth/auth_service.dart
+    │   ├── auth/
+    │   │   ├── auth_service.dart      login, register (+ phone via profile), logout, forgot password
+    │   │   └── dev_account.dart       backend dev account, offered as "Fill in" in debug builds
     │   ├── product/product_service.dart
     │   ├── cart/cart_service.dart
     │   ├── order/order_service.dart
     │   ├── wishlist/wishlist_service.dart
     │   ├── notification/notification_service.dart
-    │   └── user/user_service.dart
+    │   └── user/user_service.dart     GET /auth/me, PATCH /me/profile
     │
     ├── providers/                     app state that screens listen to
     │   ├── auth/auth_provider.dart

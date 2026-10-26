@@ -63,8 +63,8 @@ All 15 screens are built from the prototype. They are now being connected to the
 | API slice | Scope | Status |
 |---|---|---|
 | A | Foundation: `ApiClient` (dio), envelope + error codes, secure token storage, refresh on 401, health, dev catalog seed | Done |
-| B | Auth + profile (login, register, logout, forgot password, `/auth/me`, `PATCH /me/profile`); drop the mock demo account | Next |
-| C | Catalog: categories, server-side search/sort/filter, paging, product details | To do |
+| B | Auth + profile (login, register, logout, forgot password, `/auth/me`, `PATCH /me/profile`); drop the mock demo account | Done |
+| C | Catalog: categories, server-side search/sort/filter, paging, product details | Next |
 | D | Cart + wishlist on the server (cart items have their own `itemId`) | To do |
 | E | Orders (preview, place with `Idempotency-Key`, history) + notifications | To do |
 
@@ -77,7 +77,8 @@ Known API differences to handle: register takes no phone (send it via `PATCH /me
 - **API layer (`services/api/`):** one shared `ApiClient.instance` (dio) sends the bearer token, unwraps the `ApiResponse` envelope, refreshes tokens once on a 401 and retries, and throws `ApiException`. Show `e.userMessage` (mapped from the error `code`), never the server's message. Tokens live in `flutter_secure_storage`. Being offline never signs the user out.
 - **Navigation (go_router):** `StatefulShellRoute` with 5 tabs (Home, Categories, Wishlist, Cart, Profile) rendered by `widgets/layout/main_shell.dart`; `/notifications` lives in the Home branch and `/orders`, `/orders/:id` in the Profile branch (tab bar stays visible). Full screen: splash, auth, `/product/:id`, `/checkout`, `/orders/:id/confirmed`. A redirect sends guests to `/login?from=…` for cart, wishlist, checkout, orders, profile and notifications.
 - **Assets:** only images the API never sends are bundled — Manrope font, Home banner photos (`assets/images/banners/`), logo/category icons/placeholder as SVG (`assets/icons/`, via `flutter_svg`). Product photos stay as URLs (`imageUrl`). UI icons use Material icons.
-- **Auth:** email + password only (demo `demo@mercato.app` / `Demo123!` until the backend is connected) — no Google/Apple sign-in.
+- **Auth:** email + password only through the API — no Google/Apple sign-in. Signed in = tokens in secure storage; "Continue as guest" is a local flag. `UserProvider` follows `AuthProvider` (ProxyProvider in `main.dart`): profile loads from `GET /auth/me` after sign-in and clears after sign-out. A failed token refresh signs out and Sign in shows "Your session has ended". Debug builds offer the backend dev account (`services/auth/dev_account.dart`, from `V2__seed_users.sql`) as "Fill in".
+- **Widget tests use a fake backend** (`test/fake_api.dart`, set up by `startAppAtLogin` in `test/helpers.dart`), so they never need the server. The simulator screenshot test (`integration_test/`) uses the real API, so start the backend first.
 - **Tests:** `test/helpers.dart` gives a phone-sized screen and `wait`/`tapVisible` helpers. Use `wait(tester)` instead of `pumpAndSettle` — some animations (splash rings, skeletons) repeat forever.
 
 ## Backend architecture (read `docs/backend/backend-patterns.md` for the full rules)

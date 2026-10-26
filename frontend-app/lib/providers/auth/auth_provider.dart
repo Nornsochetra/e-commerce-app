@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../services/api/api_client.dart';
+import '../../services/api/api_exception.dart';
 import '../../services/auth/auth_service.dart';
 
 /// Where the user is in the sign-in flow.
@@ -11,6 +13,13 @@ class AuthProvider extends ChangeNotifier {
 
   AuthStatus status = AuthStatus.unknown;
   bool isLoading = false;
+
+  /// True after the server ended the session (tokens could not be refreshed); Sign in explains it.
+  bool sessionExpired = false;
+
+  AuthProvider() {
+    ApiClient.instance.onSessionExpired = _onSessionExpired;
+  }
 
   bool get isSignedIn => status == AuthStatus.signedIn;
 
@@ -26,13 +35,13 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Returns an error message, or null when sign-in worked.
-  Future<String?> login(String email, String password) async {
-    return _run(() => _service.login(email, password), onSuccess: AuthStatus.signedIn);
+  Future<String?> login(String email, String password) {
+    return _run(() => _service.login(email, password));
   }
 
   /// Returns an error message, or null when the account was created (and signed in).
-  Future<String?> register({required String name, required String email, required String phone, required String password}) async {
-    return _run(() => _service.register(name: name, email: email, phone: phone, password: password), onSuccess: AuthStatus.signedIn);
+  Future<String?> register({required String name, required String email, required String phone, required String password}) {
+    return _run(() => _service.register(name: name, email: email, phone: phone, password: password));
   }
 
   Future<void> continueAsGuest() async {
@@ -47,17 +56,34 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> requestPasswordReset(String email) => _service.requestPasswordReset(email);
+  /// Returns an error message only when the request couldn't be sent (e.g. offline).
+  /// The screen shows the same confirmation for every email address.
+  Future<String?> requestPasswordReset(String email) async {
+    try {
+      await _service.requestPasswordReset(email);
+      return null;
+    } on ApiException catch (e) {
+      return e.isConnectionProblem ? e.userMessage : null;
+    }
+  }
 
-  Future<String?> _run(Future<void> Function() action, {required AuthStatus onSuccess}) async {
+  void _onSessionExpired() {
+    if (!isSignedIn) return;
+    status = AuthStatus.signedOut;
+    sessionExpired = true;
+    notifyListeners();
+  }
+
+  Future<String?> _run(Future<void> Function() action) async {
     isLoading = true;
     notifyListeners();
     try {
       await action();
-      status = onSuccess;
+      status = AuthStatus.signedIn;
+      sessionExpired = false;
       return null;
-    } on AuthException catch (e) {
-      return e.message;
+    } on ApiException catch (e) {
+      return e.userMessage;
     } catch (_) {
       return 'Something went wrong. Please try again.';
     } finally {
