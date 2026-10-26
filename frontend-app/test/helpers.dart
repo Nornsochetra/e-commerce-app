@@ -36,7 +36,7 @@ Future<FakeBackend> startAppAtLogin(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues({});
   final backend = FakeBackend();
   ApiClient.instance = backend.client; // before AuthProvider, which listens for expired sessions
-  await tester.pumpWidget(MercatoApp(authProvider: AuthProvider()));
+  await tester.pumpWidget(ApmApp(authProvider: AuthProvider()));
   await wait(tester, steps: 14);
   return backend;
 }

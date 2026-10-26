@@ -9,7 +9,7 @@ last_updated: 2026-08-27
 
 # Backend initialization blueprint
 
-Initialization contract for the Mercato Spring Boot backend. This phase builds the shared spine,
+Initialization contract for the APM Spring Boot backend. This phase builds the shared spine,
 identity persistence, and health endpoint. It does not implement catalog, cart, wishlist, order, or
 notification feature controllers.
 

@@ -9,7 +9,7 @@ last_updated: 2026-08-27
 
 # Backend patterns
 
-Project-specific package structure, dependency rules, and implementation patterns for the Mercato
+Project-specific package structure, dependency rules, and implementation patterns for the APM
 e-commerce backend.
 
 Companion documents:

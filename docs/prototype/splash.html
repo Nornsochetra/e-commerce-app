@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#FAFAF8" />
-  <title>Mercato — Welcome</title>
+  <title>APM — Welcome</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/mercato.css" />
@@ -53,16 +53,16 @@ function SplashScreen({ navigate }) {
     <div className="splash-center">
       <div className="splash-logo" aria-hidden="true">
         <span className="splash-ring" /><span className="splash-ring late" />
-        <div className="splash-mark"><Icon name="leaf" size={46} strokeWidth={1.9} /></div>
+        <img className="splash-mark" src="assets/logo-mark.svg" alt="" />
       </div>
-      <h1 className="splash-word">Mercato</h1>
-      <p className="splash-tag">Fresh, simple, delivered.</p>
-      <div className="splash-progress" role="progressbar" aria-label="Loading Mercato" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}>
+      <h1 className="splash-word">APM</h1>
+      <p className="splash-tag">All Products Marketplace</p>
+      <div className="splash-progress" role="progressbar" aria-label="Loading APM" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}>
         <span className={progress === 100 ? 'done' : ''} style={{ width: progress + '%' }} />
       </div>
     </div>
 
-    <p className="splash-version">MERCATO PROTOTYPE · V1.0</p>
+    <p className="splash-version">APM PROTOTYPE · V1.0</p>
   </div>;
 }
 

@@ -81,7 +81,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       children: [
         const Text('Create account', style: AppText.display),
         const SizedBox(height: AppSpacing.xs),
-        const Text('Join Mercato — you’ll be signed in right away.', style: AppText.bodyMuted),
+        const Text('Join APM — you’ll be signed in right away.', style: AppText.bodyMuted),
         const SizedBox(height: AppSpacing.xxl),
         if (_error != null) ...[
           AlertBanner(message: _error!, tone: AlertTone.error),

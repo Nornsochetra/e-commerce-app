@@ -50,8 +50,8 @@ class FieldError {
 
 /// User-facing text for every error code the API can return (docs/api-convention.md §2.1–2.2).
 const _messages = {
-  ApiException.network: 'Can’t reach Mercato. Check your connection and try again.',
-  ApiException.timeout: 'Mercato is taking too long to answer. Please try again.',
+  ApiException.network: 'Can’t reach APM. Check your connection and try again.',
+  ApiException.timeout: 'APM is taking too long to answer. Please try again.',
   // Universal
   'INVALID_REQUEST': 'Something in that request wasn’t right. Please try again.',
   'VALIDATION_ERROR': 'Some details aren’t valid. Check them and try again.',

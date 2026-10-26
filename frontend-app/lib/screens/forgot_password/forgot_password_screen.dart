@@ -86,7 +86,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           const SizedBox(height: AppSpacing.sm),
           AppButton(label: 'Use a different email', variant: AppButtonVariant.text, onPressed: () => setState(() => _sent = false)),
         ] else ...[
-          const Text('Enter the email you use for Mercato and we’ll send reset instructions.', style: AppText.bodyMuted),
+          const Text('Enter the email you use for APM and we’ll send reset instructions.', style: AppText.bodyMuted),
           const SizedBox(height: AppSpacing.xxl),
           if (_error != null) ...[
             AlertBanner(message: _error!, tone: AlertTone.error),

@@ -1,11 +1,11 @@
 {
-    "name": "frontend_app",
-    "short_name": "frontend_app",
+    "name": "APM — All Products Marketplace",
+    "short_name": "APM",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FAFAF8",
+    "theme_color": "#047857",
+    "description": "APM — All Products Marketplace",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

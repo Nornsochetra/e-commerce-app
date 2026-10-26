@@ -31,7 +31,7 @@ void main() {
 
   testWidgets('slice 2: splash and sign-in screens', (tester) async {
     await freshStart();
-    await tester.pumpWidget(MercatoApp(authProvider: AuthProvider()));
+    await tester.pumpWidget(ApmApp(authProvider: AuthProvider()));
     await wait(tester, 1100);
     await binding.takeScreenshot('s2_01_splash');
     await wait(tester, 2200);
@@ -74,7 +74,7 @@ void main() {
 
   testWidgets('slice 3: home, categories and product details', (tester) async {
     await freshStart();
-    await tester.pumpWidget(MercatoApp(authProvider: AuthProvider()));
+    await tester.pumpWidget(ApmApp(authProvider: AuthProvider()));
     await wait(tester, 3300);
     await tap(tester, find.text('Fill in'));
     await tap(tester, find.text('Sign in'));
@@ -117,7 +117,7 @@ void main() {
 
   testWidgets('slice 4: cart, checkout, confirmation and orders', (tester) async {
     await freshStart();
-    await tester.pumpWidget(MercatoApp(authProvider: AuthProvider()));
+    await tester.pumpWidget(ApmApp(authProvider: AuthProvider()));
     await wait(tester, 3300);
     await tap(tester, find.text('Fill in'));
     await tap(tester, find.text('Sign in'));
@@ -155,7 +155,7 @@ void main() {
 
   testWidgets('slice 5: wishlist, notifications and profile', (tester) async {
     await freshStart();
-    await tester.pumpWidget(MercatoApp(authProvider: AuthProvider()));
+    await tester.pumpWidget(ApmApp(authProvider: AuthProvider()));
     await wait(tester, 3300);
     await tap(tester, find.text('Fill in'));
     await tap(tester, find.text('Sign in'));

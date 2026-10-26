@@ -129,9 +129,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                       children: [
                         _reveal(0, _Logo(rings: _rings, animate: !_reduceMotion), scale: true),
                         const SizedBox(height: AppSpacing.xxl),
-                        _reveal(0.2, const Text('Mercato', style: TextStyle(fontSize: 40, height: 1.1, fontWeight: FontWeight.w800, letterSpacing: -1.4, color: AppColors.text))),
+                        _reveal(0.2, const Text('APM', style: TextStyle(fontSize: 40, height: 1.1, fontWeight: FontWeight.w800, letterSpacing: -1.4, color: AppColors.primaryDeep))),
                         const SizedBox(height: AppSpacing.sm),
-                        _reveal(0.32, const Text('Fresh, simple, delivered.', style: TextStyle(fontSize: 15, color: AppColors.textMuted))),
+                        _reveal(0.32, const Text('All Products Marketplace', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textMuted))),
                         const SizedBox(height: 28),
                         _reveal(0.45, _ProgressBar(value: _progress)),
                       ],
@@ -159,7 +159,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     left: 0,
                     right: 0,
                     bottom: 28,
-                    child: Text('MERCATO · VERSION 1.0', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.5, color: AppColors.textFaint)),
+                    child: Text('APM · VERSION 1.0', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.5, color: AppColors.textFaint)),
                   ),
                 ],
               ),
@@ -198,7 +198,7 @@ class _Logo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Mercato logo',
+      label: 'APM logo',
       child: SizedBox.square(
         dimension: 120,
         child: Stack(
@@ -228,7 +228,7 @@ class _ProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Loading Mercato',
+      label: 'Loading APM',
       value: '${(value * 100).round()}%',
       child: Container(
         width: 168,

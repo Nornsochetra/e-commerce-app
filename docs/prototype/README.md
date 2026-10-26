@@ -1,10 +1,10 @@
-# Mercato UI prototype
+# APM UI prototype
 
-Clickable mobile prototype of the Mercato app. **One screen = one HTML file.** Each file loads React, Babel and Tailwind from a CDN, plus the two shared assets. There is no build step and no Node.js.
+Clickable mobile prototype of the APM (All Products Marketplace) app. **One screen = one HTML file.** Each file loads React, Babel and Tailwind from a CDN, plus the two shared assets. There is no build step and no Node.js.
 
 **Open it:** double-click `index.html`, which opens the splash screen (`splash.html`). Works straight from `file://`; an internet connection is needed for the CDNs, font and product photos. `screens.html` lists every screen.
 
-Demo sign-in: `demo@mercato.app` / `Demo123!`. Data is mock data kept in the browser's `localStorage`. Use Profile → **Reset demo data** to start over.
+Demo sign-in: `demo@apm.app` / `Demo123!`. Data is mock data kept in the browser's `localStorage`. Use Profile → **Reset demo data** to start over.
 
 ## Structure
 
@@ -52,7 +52,7 @@ Copy this into `settings.html`, add the link in `Mercato.to` (in `assets/mercato
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Mercato — Settings</title>
+  <title>APM — Settings</title>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/mercato.css" />
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11"></script>

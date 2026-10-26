@@ -1,6 +1,6 @@
 # Feature specifications
 
-Detailed requirements for the Mercato v1 customer experience.
+Detailed requirements for the APM (All Products Marketplace) v1 customer experience.
 
 | Feature | Specification | Status |
 |---|---|---|

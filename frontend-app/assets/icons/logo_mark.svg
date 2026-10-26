@@ -1,1 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10B981"/><stop offset=".62" stop-color="#047857"/><stop offset="1" stop-color="#065F46"/></linearGradient></defs><rect width="96" height="96" rx="30" fill="url(#g)"/><g transform="translate(25 25) scale(1.9)" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10Z"/><path d="M2 21c0-3 1.9-5.5 6-7.5 3-1.5 5-3 7-5"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <!-- APM logo mark: white shopping bag with "APM" and a leaf on a green rounded square. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10B981"/>
+      <stop offset=".55" stop-color="#047857"/>
+      <stop offset="1" stop-color="#065F46"/>
+    </linearGradient>
+    <linearGradient id="fresh" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#047857"/>
+      <stop offset="1" stop-color="#34D399"/>
+    </linearGradient>
+    <clipPath id="bag">
+      <path d="M28.5 32H67.5Q72.6 32 73.6 37L79.4 65.5Q81.3 77 70.5 77H25.5Q14.7 77 16.6 65.5L22.4 37Q23.4 32 28.5 32Z"/>
+    </clipPath>
+  </defs>
+  <rect width="96" height="96" rx="26" fill="url(#tile)"/>
+  <!-- handle -->
+  <path d="M36.5 32.5V29A11.5 11.5 0 0 1 59.5 29V32.5" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round"/>
+  <!-- bag body with the green swoosh along the bottom -->
+  <path d="M28.5 32H67.5Q72.6 32 73.6 37L79.4 65.5Q81.3 77 70.5 77H25.5Q14.7 77 16.6 65.5L22.4 37Q23.4 32 28.5 32Z" fill="#FFFFFF"/>
+  <path clip-path="url(#bag)" d="M14 77.5C38 77 58 70.5 82 61.5V80H14Z" fill="url(#fresh)"/>
+  <circle cx="36.5" cy="35.5" r="2.1" fill="#10B981"/>
+  <circle cx="59.5" cy="35.5" r="2.1" fill="#10B981"/>
+  <!-- "APM" -->
+  <g fill="none" stroke="#065F46" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M29.5 60L35.8 43.5L42.1 60"/>
+    <path d="M47 60V43.5H51.6A4.75 4.75 0 0 1 51.6 53H47"/>
+    <path d="M57.2 60V43.5L62.4 52.4L67.6 43.5V60"/>
+  </g>
+  <!-- leaf across the A -->
+  <path d="M30.4 61.6C32.6 55.4 37.6 51.6 44.6 50.6C42.6 56.6 37.6 60.6 30.4 61.6Z" fill="#34D399" stroke="#FFFFFF" stroke-width="0.9" stroke-linejoin="round"/>
+</svg>

@@ -9,7 +9,7 @@ import '../helpers.dart';
 /// Closes the app and opens it again (same device storage and tokens), then waits for the splash.
 Future<void> restartApp(WidgetTester tester) async {
   await tester.pumpWidget(const SizedBox());
-  await tester.pumpWidget(MercatoApp(authProvider: AuthProvider()));
+  await tester.pumpWidget(ApmApp(authProvider: AuthProvider()));
   await wait(tester, steps: 14);
 }
 
@@ -124,7 +124,7 @@ void main() {
     await tester.enterText(find.byType(TextField), 'someone@example.com');
     await tester.tap(find.text('Send instructions'));
     await wait(tester, steps: 3);
-    expect(find.textContaining('Can’t reach Mercato'), findsOneWidget);
+    expect(find.textContaining('Can’t reach APM'), findsOneWidget);
     expect(find.text('Check your email'), findsNothing);
   });
 }

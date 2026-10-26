@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#FAFAF8" />
-  <title>Mercato — Sign in</title>
+  <title>APM — Sign in</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/mercato.css" />
@@ -23,7 +23,7 @@
 <!-- Screen: Sign in -->
 <script type="text/babel">
 /* SCR-002 Login. Prototype accepts only the demo account; guests can browse without signing in. */
-const DEMO_ACCOUNT = { email: 'demo@mercato.app', password: 'Demo123!' };
+const DEMO_ACCOUNT = { email: 'demo@apm.app', password: 'Demo123!' };
 
 function LoginScreen({ navigate }) {
   const to = Mercato.to;
@@ -78,7 +78,7 @@ function LoginScreen({ navigate }) {
         <button type="button" className="btn btn-outline" onClick={() => Mercato.toast('Apple sign-in isn’t available in this prototype')}><Icon name="apple" size={20} />Apple</button>
       </div>
       <a href={to.home} className="btn btn-block mt-3" style={{ color: 'var(--text-2)' }} onClick={() => Mercato.setSession({ mode: 'guest' })}>Continue as guest</a>
-      <p className="text-center t-body muted mt-4">New to Mercato? <a href={to.register} className="link">Create an account</a></p>
+      <p className="text-center t-body muted mt-4">New to APM? <a href={to.register} className="link">Create an account</a></p>
     </section>
   </AuthLayout>;
 }

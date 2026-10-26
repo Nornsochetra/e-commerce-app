@@ -36,7 +36,7 @@ class ProfileScreen extends StatelessWidget {
   Future<void> _logOut(BuildContext context) async {
     final ok = await showConfirmSheet(
       context,
-      title: 'Log out of Mercato?',
+      title: 'Log out of APM?',
       message: 'You’ll return to the sign-in screen. Your cart and wishlist stay saved on this device.',
       confirmLabel: 'Log out',
       danger: true,
@@ -160,7 +160,7 @@ class ProfileScreen extends StatelessWidget {
           const _Label('More'),
           _Menu(rows: [
             const _MenuRow(icon: Icons.settings_outlined, title: 'Settings', neutral: true),
-            const _MenuRow(icon: Icons.help_outline_rounded, title: 'About Mercato', neutral: true),
+            const _MenuRow(icon: Icons.help_outline_rounded, title: 'About APM', neutral: true),
             const _MenuRow(icon: Icons.call_outlined, title: 'Contact us', neutral: true),
             _MenuRow(icon: Icons.refresh_rounded, title: 'Reset demo data', subtitle: 'Restore the sample cart, orders and notifications', neutral: true, onTap: () => _resetDemo(context)),
           ]),
@@ -168,7 +168,7 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: AppSpacing.xxl),
           AppButton(label: 'Log out', icon: Icons.logout_rounded, variant: AppButtonVariant.danger, onPressed: () => _logOut(context)),
           const SizedBox(height: AppSpacing.md),
-          const Text('Mercato demo · data stays on this device', style: AppText.meta, textAlign: TextAlign.center),
+          const Text('APM demo · data stays on this device', style: AppText.meta, textAlign: TextAlign.center),
         ],
       ),
     );

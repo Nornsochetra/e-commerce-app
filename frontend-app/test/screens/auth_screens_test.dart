@@ -16,7 +16,7 @@ void main() {
     expect(find.text('Enter your email address.'), findsOneWidget);
     expect(find.text('Enter your password.'), findsOneWidget);
 
-    await tester.enterText(find.byType(TextField).at(0), 'demo@mercato.app');
+    await tester.enterText(find.byType(TextField).at(0), 'user@example.com');
     await tester.enterText(find.byType(TextField).at(1), 'wrongpass1');
     await tapVisible(tester, find.text('Sign in'));
     await wait(tester, steps: 3);

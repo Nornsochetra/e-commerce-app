@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Mercato design tokens, taken from the HTML prototype (docs/prototype/assets/mercato.css).
+/// APM design tokens, taken from the HTML prototype (docs/prototype/assets/mercato.css).
 
 /// Colours used across the app.
 class AppColors {

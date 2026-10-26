@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#FAFAF8" />
-  <title>Mercato — Profile</title>
+  <title>APM — Profile</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/mercato.css" />
@@ -120,16 +120,16 @@ function ProfileScreen({ navigate }) {
     <h2 className="section-label">More</h2>
     <nav className="card flush" aria-label="More">
       <ProfileMenuRow icon="settings" tone="neutral" title="Settings" soon />
-      <ProfileMenuRow icon="help" tone="neutral" title="About Mercato" soon />
+      <ProfileMenuRow icon="help" tone="neutral" title="About APM" soon />
       <ProfileMenuRow icon="phone" tone="neutral" title="Contact us" soon />
       <ProfileMenuRow icon="refresh" tone="neutral" title="Reset demo data" sub="Restore the sample cart, orders and profile" onClick={() => setDialog('reset')} />
     </nav>
 
     <button className="btn btn-danger btn-block mt-6" onClick={() => setDialog('logout')}><Icon name="logout" size={18} />Log out</button>
-    <p className="t-meta text-center mt-3">Mercato prototype · data stays in this browser</p>
+    <p className="t-meta text-center mt-3">APM prototype · data stays in this browser</p>
 
     {editing && <EditProfileSheet user={user} onClose={() => setEditing(false)} onSave={save} />}
-    {dialog && <BottomSheet title={dialog === 'reset' ? 'Reset demo data?' : 'Log out of Mercato?'} onClose={() => setDialog(null)} role="alertdialog">
+    {dialog && <BottomSheet title={dialog === 'reset' ? 'Reset demo data?' : 'Log out of APM?'} onClose={() => setDialog(null)} role="alertdialog">
       <p className="t-body muted mt-2">{dialog === 'reset' ? 'This restores the original sample cart, wishlist, notifications, orders and profile in this browser.' : 'You’ll return to the sign-in screen. Your cart and wishlist stay saved in this browser.'}</p>
       <div className="sheet-actions">
         <button className="btn btn-outline" onClick={() => setDialog(null)}>Cancel</button>

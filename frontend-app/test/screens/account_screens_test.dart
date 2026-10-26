@@ -129,7 +129,7 @@ void main() {
     await openTab(tester, 'Profile');
     await tapAboveTabBar(tester, find.widgetWithText(AppButton, 'Log out'));
     await wait(tester, steps: 2);
-    expect(find.text('Log out of Mercato?'), findsOneWidget);
+    expect(find.text('Log out of APM?'), findsOneWidget);
     await tester.tap(find.widgetWithText(AppButton, 'Log out').last);
     await wait(tester);
     expect(find.text('Welcome back'), findsOneWidget);

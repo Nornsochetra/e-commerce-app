@@ -1,5 +1,5 @@
 name: frontend_app
-description: "Mercato mobile e-commerce app (Flutter UI)."
+description: "APM (All Products Marketplace) mobile e-commerce app (Flutter UI)."
 publish_to: 'none'
 
 version: 1.0.0+1

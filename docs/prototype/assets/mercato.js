@@ -1,4 +1,4 @@
-/* Mercato prototype — shared runtime for every screen file (plain JavaScript, no JSX, works from file://).
+/* APM (All Products Marketplace) prototype — shared runtime for every screen file (plain JavaScript, no JSX, works from file://).
    1. Data: mock catalog + localStorage-backed cart, wishlist, orders, notifications, profile → window.Mercato
    2. Navigation: Mercato.to.* builds links to the screen files, Mercato.go / Mercato.goBack move between them
    3. Shared UI: Icon, ScreenLayout (header + floating tab bar + dock), cards, sheets, form fields … → globals
@@ -306,7 +306,7 @@
       h(Icon, { name: 'bell', size: 20 }), unread > 0 && h('span', { className: 'dot-badge' }, unread > 9 ? '9+' : unread));
   }
   function Brand({ href = to.home }) {
-    return h('a', { href, className: 'brand', 'aria-label': 'Mercato home' }, h('span', { className: 'brand-mark' }, h(Icon, { name: 'leaf', size: 20, strokeWidth: 2 })), 'Mercato');
+    return h('a', { href, className: 'brand', 'aria-label': 'APM home' }, h('img', { className: 'brand-mark', src: 'assets/logo-mark.svg', alt: '' }), 'APM');
   }
   /**
    * Frame for every main screen. `header` sits sticky on top, `nav` toggles the floating tab bar (`active` = tab id),
@@ -325,7 +325,7 @@
   function AuthLayout({ onBack, children }) {
     return h('main', { className: 'auth', style: { animation: 'fade-in .3s ease-out' } },
       h('div', { className: 'auth-top' },
-        onBack ? h(BackButton, { onBack, label: 'Back to sign in' }) : h('span', { className: 'brand' }, h('span', { className: 'brand-mark' }, h(Icon, { name: 'leaf', size: 20, strokeWidth: 2 })), 'Mercato'),
+        onBack ? h(BackButton, { onBack, label: 'Back to sign in' }) : h('span', { className: 'brand' }, h('img', { className: 'brand-mark', src: 'assets/logo-mark.svg', alt: '' }), 'APM'),
         h('a', { href: to.screens, className: 'link muted', style: { fontSize: 13 } }, 'All screens')),
       children,
       h('p', { className: 'text-center t-meta mt-auto pt-8' }, 'Prototype only — please don’t enter real credentials.'),

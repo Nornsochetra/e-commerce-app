@@ -1,6 +1,6 @@
 # Flutter app structure
 
-How the Mercato Flutter app in `frontend-app/` is organised. The screens are built from the approved HTML prototype in [`docs/prototype/`](../prototype/README.md).
+How the APM (All Products Marketplace) Flutter app in `frontend-app/` is organised. The screens are built from the approved HTML prototype in [`docs/prototype/`](../prototype/README.md).
 
 ## 1. Decisions
 
@@ -11,7 +11,7 @@ How the Mercato Flutter app in `frontend-app/` is organised. The screens are bui
 | Data | Mock data first. Services return `Future`s, so the Spring backend can replace the mock later without changing screens. |
 | Saving mock data | [`shared_preferences`](https://pub.dev/packages/shared_preferences) — cart, wishlist, orders and profile survive closing the app |
 | Font | Manrope, bundled in `assets/fonts/` |
-| Images | Product photos come from the API, so they stay as URLs. Images the API never sends are bundled in `assets/`: Home banner photos, the Mercato logo, category icons and the image placeholder. |
+| Images | Product photos come from the API, so they stay as URLs. Images the API never sends are bundled in `assets/`: Home banner photos, the APM logo, category icons and the image placeholder. |
 | Vector images | SVG files shown with [`flutter_svg`](https://pub.dev/packages/flutter_svg); other UI icons use Flutter's built-in Material icons |
 | API | [`dio`](https://pub.dev/packages/dio) through one shared `ApiClient` (`services/api/`). Tokens in [`flutter_secure_storage`](https://pub.dev/packages/flutter_secure_storage). Screens show `ApiException.userMessage`, never the server's `message`. |
 | Sign-in | Email + password only (JWT from the backend) — no Google/Apple sign-in. Guests can browse and search. Cart, wishlist, checkout, orders, profile and notifications require sign-in (see [requirement.md §7.2](../requirement.md)). |
@@ -27,7 +27,8 @@ frontend-app/
 │   ├── images/
 │   │   ├── CREDITS.md                 photo credits (Unsplash)
 │   │   └── banners/                   Home carousel photos
-│   └── icons/                         logo_mark.svg, leaf.svg, category_*.svg, image_placeholder.svg
+│   └── icons/                         logo_mark.svg (APM logo), leaf.svg, category_*.svg, image_placeholder.svg
+├── branding/app_icon.svg              launcher icon source; `python tool/generate_icons.py` writes the iOS/Android/web icons
 └── lib/
     ├── main.dart                      starts the app: providers + theme + router
     ├── router.dart                    every screen path (/home, /cart, /product/:id …)
@@ -117,7 +118,7 @@ frontend-app/
     ├── widgets/                       shared pieces used by two or more screens
     │   ├── layout/
     │   │   ├── main_shell.dart            frame for the 5 tabs (screen + floating tab bar), used by router.dart
-    │   │   ├── brand_logo.dart            Mercato logo mark + name
+    │   │   ├── brand_logo.dart            APM logo mark + name
     │   │   ├── auth_layout.dart           frame for Sign in / Create account / Reset password
     │   │   ├── app_header.dart            back button + centred title + action
     │   │   ├── section_header.dart        section title + optional "See all"

@@ -14,19 +14,19 @@ import 'theme.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   final authProvider = AuthProvider();
-  runApp(MercatoApp(authProvider: authProvider));
+  runApp(ApmApp(authProvider: authProvider));
 }
 
 /// Root widget: creates every provider (and loads its data), then the themed app with the router.
-class MercatoApp extends StatefulWidget {
+class ApmApp extends StatefulWidget {
   final AuthProvider authProvider;
-  const MercatoApp({super.key, required this.authProvider});
+  const ApmApp({super.key, required this.authProvider});
 
   @override
-  State<MercatoApp> createState() => _MercatoAppState();
+  State<ApmApp> createState() => _ApmAppState();
 }
 
-class _MercatoAppState extends State<MercatoApp> {
+class _ApmAppState extends State<ApmApp> {
   late final _router = createRouter(widget.authProvider);
 
   @override
@@ -46,7 +46,7 @@ class _MercatoAppState extends State<MercatoApp> {
         ),
       ],
       child: MaterialApp.router(
-        title: 'Mercato',
+        title: 'APM',
         debugShowCheckedModeBanner: false,
         theme: buildAppTheme(),
         routerConfig: _router,

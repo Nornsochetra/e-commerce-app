@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository layout
 
-Mercato is a mobile e-commerce app (Setec Institute year-4 project), split into three parts:
+APM (All Products Marketplace, formerly "Mercato") is a mobile e-commerce app (Setec Institute year-4 project), split into three parts:
 
 - `backend/` — Spring Boot 4 / Java 21 REST API (`com.setec.ecommerce`). **All v1 endpoints are implemented and tested.**
 - `frontend-app/` — Flutter app (Android/iOS phones, portrait), all screens built from the prototype with mock data (not yet connected to the backend). See **Flutter app status** below.
@@ -77,6 +77,7 @@ Known API differences to handle: register takes no phone (send it via `PATCH /me
 - **API layer (`services/api/`):** one shared `ApiClient.instance` (dio) sends the bearer token, unwraps the `ApiResponse` envelope, refreshes tokens once on a 401 and retries, and throws `ApiException`. Show `e.userMessage` (mapped from the error `code`), never the server's message. Tokens live in `flutter_secure_storage`. Being offline never signs the user out.
 - **Navigation (go_router):** `StatefulShellRoute` with 5 tabs (Home, Categories, Wishlist, Cart, Profile) rendered by `widgets/layout/main_shell.dart`; `/notifications` lives in the Home branch and `/orders`, `/orders/:id` in the Profile branch (tab bar stays visible). Full screen: splash, auth, `/product/:id`, `/checkout`, `/orders/:id/confirmed`. A redirect sends guests to `/login?from=…` for cart, wishlist, checkout, orders, profile and notifications.
 - **Assets:** only images the API never sends are bundled — Manrope font, Home banner photos (`assets/images/banners/`), logo/category icons/placeholder as SVG (`assets/icons/`, via `flutter_svg`). Product photos stay as URLs (`imageUrl`). UI icons use Material icons.
+- **Brand:** APM — All Products Marketplace (green/white). Logo mark `assets/icons/logo_mark.svg` (shown by `widgets/layout/brand_logo.dart`; the prototype uses a copy in `docs/prototype/assets/logo-mark.svg`). Launcher icons are generated from `branding/app_icon.svg` with `python tool/generate_icons.py` (needs Chrome + Pillow) — don't edit the PNGs by hand.
 - **Auth:** email + password only through the API — no Google/Apple sign-in. Signed in = tokens in secure storage; "Continue as guest" is a local flag. `UserProvider` follows `AuthProvider` (ProxyProvider in `main.dart`): profile loads from `GET /auth/me` after sign-in and clears after sign-out. A failed token refresh signs out and Sign in shows "Your session has ended". Debug builds offer the backend dev account (`services/auth/dev_account.dart`, from `V2__seed_users.sql`) as "Fill in".
 - **Widget tests use a fake backend** (`test/fake_api.dart`, set up by `startAppAtLogin` in `test/helpers.dart`), so they never need the server. The simulator screenshot test (`integration_test/`) uses the real API, so start the backend first.
 - **Tests:** `test/helpers.dart` gives a phone-sized screen and `wait`/`tapVisible` helpers. Use `wait(tester)` instead of `pumpAndSettle` — some animations (splash rings, skeletons) repeat forever.

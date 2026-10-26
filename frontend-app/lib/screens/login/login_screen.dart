@@ -148,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
           alignment: WrapAlignment.center,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            const Text('New to Mercato?', style: AppText.bodyMuted),
+            const Text('New to APM?', style: AppText.bodyMuted),
             TextButton(onPressed: () => context.push('/register'), child: const Text('Create an account')),
           ],
         ),

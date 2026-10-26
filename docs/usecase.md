@@ -21,7 +21,7 @@ flowchart LR
     G[Guest]
     U[Authenticated user]
 
-    subgraph Mercato
+    subgraph APM
         AUTH[Register, log in, recover access]
         CAT[Browse, search, filter, view product]
         PROFILE[View and edit profile]

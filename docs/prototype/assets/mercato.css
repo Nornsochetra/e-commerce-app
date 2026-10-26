@@ -96,8 +96,8 @@
   .app-header .title small { display: block; font-size: 12px; font-weight: 600; color: var(--text-2); line-height: 14px; }
   .app-header .slot { display: flex; align-items: center; gap: 8px; }
   .app-header .slot.end { justify-content: flex-end; }
-  .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; letter-spacing: -.02em; }
-  .brand-mark { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; background: var(--green-700); color: #fff; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; letter-spacing: -.02em; color: var(--green-800); }
+  .brand-mark { width: 36px; height: 36px; border-radius: 10px; display: block; }
 
   /* Round icon buttons (back, favourite, filter, actions). */
   .circle-btn { position: relative; width: 44px; height: 44px; flex: none; border-radius: var(--r-pill); display: inline-grid; place-items: center; background: var(--surface); color: var(--text); border: 1px solid var(--line); box-shadow: var(--sh-1); transition: background .15s, color .15s, transform .1s; }
@@ -405,8 +405,8 @@
   .splash-logo { position: relative; width: 120px; height: 120px; display: grid; place-items: center; }
   .splash-ring { position: absolute; inset: 12px; border-radius: 34px; border: 1.5px solid rgba(16, 185, 129, .45); animation: ring-pulse 2.6s ease-out .6s infinite; }
   .splash-ring.late { animation-delay: 1.9s; }
-  .splash-mark { position: relative; width: 96px; height: 96px; border-radius: 30px; display: grid; place-items: center; color: #fff; background: linear-gradient(145deg, #10B981 0%, #047857 62%, #065F46 100%); box-shadow: 0 22px 44px -16px rgba(4, 120, 87, .6), inset 0 1px 0 rgba(255, 255, 255, .3); animation: logo-in .7s cubic-bezier(.2, .8, .2, 1) both; }
-  .splash-word { margin-top: 24px; font-size: 40px; line-height: 44px; font-weight: 800; letter-spacing: -.035em; animation: rise-in .55s .2s ease-out both; }
+  .splash-mark { position: relative; width: 96px; height: 96px; border-radius: 26px; display: block; box-shadow: 0 22px 44px -16px rgba(4, 120, 87, .6), inset 0 1px 0 rgba(255, 255, 255, .3); animation: logo-in .7s cubic-bezier(.2, .8, .2, 1) both; }
+  .splash-word { margin-top: 24px; font-size: 40px; line-height: 44px; font-weight: 800; letter-spacing: -.035em; color: var(--green-800); animation: rise-in .55s .2s ease-out both; }
   .splash-tag { margin-top: 8px; font-size: 15px; color: var(--text-2); animation: rise-in .55s .32s ease-out both; }
   .splash-progress { position: relative; width: 168px; height: 6px; margin-top: 28px; border-radius: var(--r-pill); overflow: hidden; background: var(--mint); animation: rise-in .55s .45s ease-out both; }
   .splash-progress span { position: absolute; left: 0; top: 0; bottom: 0; border-radius: var(--r-pill); background: linear-gradient(90deg, var(--green-500), var(--green-700)); transition: width 1.4s cubic-bezier(.2, .7, .3, 1); }
