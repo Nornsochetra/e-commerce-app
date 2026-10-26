@@ -68,6 +68,15 @@ All 15 screens are built from the prototype and connected to the Spring backend,
 | D | Cart + wishlist on the server (cart items have their own `itemId`) | Done |
 | E | Orders (preview, place with `Idempotency-Key`, history) + notifications | Done |
 
+Proposed next slices (not started; the user reviews and picks one):
+
+| Slice | Scope | Status |
+|---|---|---|
+| F | Fewer requests on Home: add the unread count and the active order to `GET /auth/me`, so login sends 4 requests instead of 6 (backend change) | Proposed |
+| G | Real-device check: run the screenshot test on the iPhone 16 simulator against the backend; check every screen, error and offline state, and the Android `10.0.2.2` address | Proposed |
+| H | Polish and release prep: app name and icon check, a release build, clean up old "Mercato" names in docs and the prototype (the root `README.md` is already written) | Proposed |
+| I | Optional: place one real order on the dev database with the live test (`--dart-define=LIVE_ORDER=true`). Irreversible, so only when the user says so | Proposed |
+
 Known API differences to handle: register takes no phone (send it via `PATCH /me/profile`), `DELETE /notifications` has no undo, lists are paginated, money is `{amount: "89.00", currency}`, badges arrive lowercase and unordered (use `Product.cardBadge` / `badgesInOrder`).
 
 How the API is used (details in each provider):

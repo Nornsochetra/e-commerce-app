@@ -1,17 +1,11 @@
-# frontend_app
+# APM app (Flutter)
 
-A new Flutter project.
+The APM mobile app. How to run it with the backend is in the [project README](../README.md);
+the folder structure and conventions are in [`docs/frontend/flutter-structure.md`](../docs/frontend/flutter-structure.md).
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+flutter pub get
+flutter run -d "iPhone 16"
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8081/api/v1   # Android emulator
+flutter analyze && flutter test
+```
