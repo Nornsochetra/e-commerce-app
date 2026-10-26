@@ -17,18 +17,18 @@ void main() {
     expect(find.text('\$209.00'), findsWidgets); // 89 + 116 + 4 delivery
 
     await tester.tap(find.byTooltip('Increase quantity of Minimal Watch'));
-    await tester.pump();
+    await wait(tester, steps: 1); // each change is a request to the server
     expect(find.text('4 items'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Remove Minimal Watch from cart'));
-    await tester.pump();
+    await wait(tester, steps: 1);
     expect(find.text('Removed from cart'), findsOneWidget);
     expect(find.text('2 items'), findsOneWidget);
 
     await wait(tester, steps: 2); // let the toast slide in
     await tester.tap(find.text('Undo'));
-    await tester.pump();
-    expect(find.text('4 items'), findsOneWidget);
+    await wait(tester, steps: 1);
+    expect(find.text('4 items'), findsOneWidget); // the watch (2) is back
   });
 
   testWidgets('cart: an item at its stock limit says so; save for later moves the other to the wishlist', (tester) async {
@@ -36,12 +36,12 @@ void main() {
     await openTab(tester, 'Cart');
     for (var i = 0; i < 3; i++) {
       await tester.tap(find.byTooltip('Increase quantity of Canvas Backpack'));
-      await tester.pump();
+      await wait(tester, steps: 1); // the stepper is disabled until the server answers
     }
     expect(find.text('Only 5 available'), findsOneWidget); // 5 = all the stock
 
     await tester.tap(find.text('Save for later')); // only the watch still offers it
-    await tester.pump();
+    await wait(tester, steps: 1);
     expect(find.text('Moved to wishlist'), findsOneWidget);
     expect(find.text('Minimal Watch'), findsNothing);
   });

@@ -65,12 +65,14 @@ All 15 screens are built from the prototype. They are now being connected to the
 | A | Foundation: `ApiClient` (dio), envelope + error codes, secure token storage, refresh on 401, health, dev catalog seed | Done |
 | B | Auth + profile (login, register, logout, forgot password, `/auth/me`, `PATCH /me/profile`); drop the mock demo account | Done |
 | C | Catalog: categories, server-side search/sort/filter, paging, product details | Done |
-| D | Cart + wishlist on the server (cart items have their own `itemId`) | Next |
-| E | Orders (preview, place with `Idempotency-Key`, history) + notifications | To do |
+| D | Cart + wishlist on the server (cart items have their own `itemId`) | Done |
+| E | Orders (preview, place with `Idempotency-Key`, history) + notifications | Next |
 
 Known API differences to handle: register takes no phone (send it via `PATCH /me/profile`), `DELETE /notifications` has no undo, lists are paginated, money is `{amount: "89.00", currency}`, badges arrive lowercase and unordered (use `Product.cardBadge` / `badgesInOrder`).
 
 Catalog (slice C): `ProductProvider.load()` reads categories and one page of up to 100 products (Home sections, related products, and id lookups for the still-mock cart/wishlist/orders); the Categories screen searches on the server (`showCategory`, `updateFilter` with a 300 ms typing pause, `loadMoreResults` while scrolling); product details call `loadProduct`. Catalog reads are public (`auth: false`).
+
+Cart + wishlist (slice D): every cart change returns the whole cart, so totals and stock rules are the server's (`CartProvider` shows what comes back; a line's stepper is disabled while its change is in flight; stock errors become toasts). `CartItem.id` is the cart line, `productId` the product. The wishlist holds full products, newest first; hearts change at once and roll back with a message on failure; Undo saves again. Only orders and notifications are still mock data (`data/mock_data.dart`, `shared_preferences`).
 
 ## Flutter architecture (full spec: `docs/frontend/flutter-structure.md`)
 

@@ -3,10 +3,19 @@ import 'package:frontend_app/data/mock_data.dart';
 import 'package:frontend_app/models/order/order.dart';
 import 'package:frontend_app/providers/cart/cart_provider.dart';
 import 'package:frontend_app/providers/order/order_provider.dart';
+import 'package:frontend_app/services/api/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../fake_api.dart';
+
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  // Orders are still mock data (slice E); the cart they are made from comes from the fake API.
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    final backend = FakeBackend();
+    ApiClient.instance = backend.client;
+    await backend.signIn();
+  });
 
   test('placing an order snapshots the cart and adds the delivery fee to the total', () async {
     final cart = CartProvider();

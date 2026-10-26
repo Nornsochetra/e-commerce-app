@@ -1,14 +1,14 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../models/cart/cart_item.dart';
 import '../models/notification/app_notification.dart';
 import '../models/order/order.dart';
 import '../models/order/order_item.dart';
 import '../models/product/category.dart';
 import '../models/product/product.dart';
 
-/// Sample data for the parts not yet connected to the Spring backend (catalog, cart, wishlist,
-/// orders, notifications). Sign-in and the profile already come from the API.
+/// Sample data for the parts not yet connected to the Spring backend (orders, notifications).
+/// Sign-in, profile, catalog, cart and wishlist come from the API; the catalog lists here are kept
+/// for the mock orders and for the widget tests' fake backend.
 /// Same products, orders and notifications as the HTML prototype.
 
 /// Pretend network delay used by every mock service call.
@@ -103,24 +103,8 @@ final mockProducts = [
   ),
 ];
 
-CartItem _cartItem(Product p, int quantity) => CartItem(
-      productId: p.id,
-      name: p.name,
-      imageUrl: p.imageUrl,
-      categoryName: p.categoryName,
-      unitPrice: p.price,
-      quantity: quantity,
-      availableQuantity: p.availableQuantity,
-    );
-
 OrderItem _orderItem(Product p, int quantity) =>
     OrderItem(productId: p.id, name: p.name, imageUrl: p.imageUrl, unitPrice: p.price, quantity: quantity);
-
-/// Starting cart: 1 watch + 2 backpacks.
-List<CartItem> mockCartItems() => [_cartItem(mockProducts[0], 1), _cartItem(mockProducts[2], 2)];
-
-/// Starting wishlist: sneakers + sunglasses.
-List<String> mockWishlistIds() => [mockProducts[1].id, mockProducts[4].id];
 
 /// Two sample orders, dated relative to today.
 List<Order> mockOrders() {

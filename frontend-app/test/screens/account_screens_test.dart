@@ -135,7 +135,7 @@ void main() {
     expect(find.text('Welcome back'), findsOneWidget);
   });
 
-  testWidgets('reset demo data restores the sample cart and keeps you signed in', (tester) async {
+  testWidgets('reset demo data keeps you signed in and leaves the server cart alone', (tester) async {
     await startSignedIn(tester);
     await openTab(tester, 'Cart');
     await tester.tap(find.byTooltip('Remove Minimal Watch from cart'));
@@ -151,6 +151,6 @@ void main() {
     expect(find.text('Welcome back'), findsNothing); // still signed in; the account is on the server
 
     await openTab(tester, 'Cart');
-    expect(find.text('3 items'), findsOneWidget);
+    expect(find.text('2 items'), findsOneWidget); // the cart is real data now, not demo data
   });
 }

@@ -46,20 +46,18 @@ class ProfileScreen extends StatelessWidget {
     if (context.mounted) context.go('/login');
   }
 
-  /// Restores the sample cart, wishlist, orders and notifications that are still mock data on this device.
-  /// Your account and profile live on the server and aren't touched.
+  /// Restores the sample orders and notifications that are still mock data on this device.
+  /// Your account, profile, cart and wishlist live on the server and aren't touched.
   Future<void> _resetDemo(BuildContext context) async {
     final ok = await showConfirmDialog(
       context,
       title: 'Reset demo data?',
-      message: 'This restores the original sample cart, wishlist, notifications and orders on this device. Your account isn’t changed.',
+      message: 'This restores the original sample orders and notifications on this device. Your account, cart and wishlist aren’t changed.',
       confirmLabel: 'Reset',
     );
     if (!ok || !context.mounted) return;
     final products = context.read<ProductProvider>();
     final reloads = [
-      context.read<CartProvider>().load,
-      context.read<WishlistProvider>().load,
       context.read<OrderProvider>().load,
       context.read<NotificationProvider>().load,
     ];
@@ -162,7 +160,7 @@ class ProfileScreen extends StatelessWidget {
             const _MenuRow(icon: Icons.settings_outlined, title: 'Settings', neutral: true),
             const _MenuRow(icon: Icons.help_outline_rounded, title: 'About APM', neutral: true),
             const _MenuRow(icon: Icons.call_outlined, title: 'Contact us', neutral: true),
-            _MenuRow(icon: Icons.refresh_rounded, title: 'Reset demo data', subtitle: 'Restore the sample cart, orders and notifications', neutral: true, onTap: () => _resetDemo(context)),
+            _MenuRow(icon: Icons.refresh_rounded, title: 'Reset demo data', subtitle: 'Restore the sample orders and notifications', neutral: true, onTap: () => _resetDemo(context)),
           ]),
 
           const SizedBox(height: AppSpacing.xxl),

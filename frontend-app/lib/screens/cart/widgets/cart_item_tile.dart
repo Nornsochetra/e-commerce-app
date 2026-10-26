@@ -14,8 +14,9 @@ class CartItemTile extends StatelessWidget {
   final ValueChanged<int> onQuantity;
   final VoidCallback onRemove;
   final VoidCallback onSaveForLater;
+  final bool busy; // a change to this line is being saved
 
-  const CartItemTile({super.key, required this.item, required this.onOpen, required this.onQuantity, required this.onRemove, required this.onSaveForLater});
+  const CartItemTile({super.key, required this.item, required this.onOpen, required this.onQuantity, required this.onRemove, required this.onSaveForLater, this.busy = false});
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +65,7 @@ class CartItemTile extends StatelessWidget {
                             child: Text(item.name, style: AppText.head, maxLines: 1, overflow: TextOverflow.ellipsis),
                           ),
                           const SizedBox(height: 2),
-                          Text('${item.categoryName} · ${formatMoney(item.unitPrice)} each', style: AppText.meta),
+                          Text('${item.categoryName.isEmpty ? '' : '${item.categoryName} · '}${formatMoney(item.unitPrice)} each', style: AppText.meta),
                         ],
                       ),
                     ),
@@ -95,7 +96,7 @@ class CartItemTile extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xs),
                 Row(
                   children: [
-                    QuantityStepper(value: item.quantity, max: item.availableQuantity, productName: item.name, onChanged: onQuantity),
+                    QuantityStepper(value: item.quantity, max: item.availableQuantity, productName: item.name, onChanged: onQuantity, enabled: !busy),
                     const Spacer(),
                     Text(formatMoney(item.lineTotal), style: AppText.price),
                   ],

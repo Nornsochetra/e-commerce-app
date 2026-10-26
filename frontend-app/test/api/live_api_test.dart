@@ -6,9 +6,11 @@ import 'package:frontend_app/services/api/api_exception.dart';
 import 'package:frontend_app/services/api/token_storage.dart';
 import 'package:frontend_app/services/auth/auth_service.dart';
 import 'package:frontend_app/services/auth/dev_account.dart';
+import 'package:frontend_app/services/cart/cart_service.dart';
 import 'package:frontend_app/services/health/health_service.dart';
 import 'package:frontend_app/services/product/product_service.dart';
 import 'package:frontend_app/services/user/user_service.dart';
+import 'package:frontend_app/services/wishlist/wishlist_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Smoke test against a real backend (skipped by default). Start the backend with the dev profile, then:
@@ -91,6 +93,44 @@ void main() {
       catalog.getProduct('00000000-0000-4000-8000-000000000000'),
       throwsA(isA<ApiException>().having((e) => e.code, 'code', 'PRODUCT_NOT_FOUND')),
     );
+  }, skip: !_live);
+
+  test('slice D services: cart and wishlist on the server (leaves both as it found them)', () async {
+    final client = ApiClient(tokens: MemoryTokenStorage());
+    final login = await client.post('/auth/login', body: {'email': _devEmail, 'password': _devPassword}, auth: false) as Map<String, dynamic>;
+    await client.tokens.save(TokenPair.fromJson(login));
+    final carts = CartService(client);
+    final wishlists = WishlistService(client);
+    final products = (await ProductService(client).getProducts(size: 100)).items;
+
+    // Cart: use an in-stock product that isn't in the cart yet.
+    final before = await carts.getCart();
+    final p = products.firstWhere((p) => p.availableQuantity >= 2 && !before.items.any((i) => i.productId == p.id));
+    var cart = await carts.addItem(p.id, 1);
+    final line = cart.items.firstWhere((i) => i.productId == p.id);
+    expect(line.id, isNot(p.id)); // cart lines have their own id
+    expect(cart.itemCount, before.itemCount + 1);
+    cart = await carts.updateItem(line.id, 2);
+    expect(cart.items.firstWhere((i) => i.id == line.id).lineTotal, p.price * 2); // calculated by the server
+    await expectLater(carts.updateItem(line.id, p.availableQuantity + 1), throwsA(isA<ApiException>().having((e) => e.code, 'code', 'INSUFFICIENT_STOCK')));
+    final soldOut = products.where((p) => p.availableQuantity == 0).firstOrNull;
+    if (soldOut != null) {
+      await expectLater(carts.addItem(soldOut.id, 1), throwsA(isA<ApiException>().having((e) => e.code, 'code', 'PRODUCT_OUT_OF_STOCK')));
+    }
+    cart = await carts.removeItem(line.id);
+    expect(cart.itemCount, before.itemCount); // back to how it was
+
+    // Wishlist: use a product that isn't saved yet.
+    final saved = (await wishlists.getPage(0)).items.map((p) => p.id).toSet();
+    final w = products.firstWhere((p) => !saved.contains(p.id));
+    expect((await wishlists.save(w.id)).id, w.id);
+    await wishlists.save(w.id); // saving twice is harmless
+    final page = await wishlists.getPage(0);
+    expect(page.items.first.id, w.id); // newest first
+    expect(page.items.where((p) => p.id == w.id), hasLength(1));
+    await wishlists.remove(w.id);
+    await expectLater(wishlists.remove(w.id), throwsA(isA<ApiException>().having((e) => e.code, 'code', 'WISHLIST_ITEM_NOT_FOUND')));
+    expect((await wishlists.getPage(0)).items.map((p) => p.id).toSet(), saved); // back to how it was
   }, skip: !_live);
 
   test('slice B services: sign in, load and edit the profile (then restore it), log out everywhere', () async {

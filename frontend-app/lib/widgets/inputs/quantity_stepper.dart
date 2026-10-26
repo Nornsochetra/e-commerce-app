@@ -8,8 +8,9 @@ class QuantityStepper extends StatelessWidget {
   final int max;
   final ValueChanged<int> onChanged;
   final String? productName; // for screen readers: "Increase quantity of Minimal Watch"
+  final bool enabled; // false while a change is being saved
 
-  const QuantityStepper({super.key, required this.value, required this.max, required this.onChanged, this.productName});
+  const QuantityStepper({super.key, required this.value, required this.max, required this.onChanged, this.productName, this.enabled = true});
 
   @override
   Widget build(BuildContext context) {
@@ -20,12 +21,12 @@ class QuantityStepper extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _StepButton(icon: Icons.remove_rounded, tooltip: 'Decrease quantity$of', onPressed: value > 1 ? () => onChanged(value - 1) : null),
+          _StepButton(icon: Icons.remove_rounded, tooltip: 'Decrease quantity$of', onPressed: enabled && value > 1 ? () => onChanged(value - 1) : null),
           SizedBox(
             width: 32,
             child: Text('$value', textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, fontFeatures: [FontFeature.tabularFigures()])),
           ),
-          _StepButton(icon: Icons.add_rounded, tooltip: 'Increase quantity$of', onPressed: value < max ? () => onChanged(value + 1) : null),
+          _StepButton(icon: Icons.add_rounded, tooltip: 'Increase quantity$of', onPressed: enabled && value < max ? () => onChanged(value + 1) : null),
         ],
       ),
     );

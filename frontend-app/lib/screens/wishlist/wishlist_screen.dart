@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../../models/product/product.dart';
 import '../../providers/cart/cart_provider.dart';
-import '../../providers/product/product_provider.dart';
 import '../../providers/wishlist/wishlist_provider.dart';
 import '../../theme.dart';
 import '../../utils/product_actions.dart';
@@ -15,16 +14,18 @@ import '../../widgets/feedback/empty_state.dart';
 import '../../widgets/feedback/loading_skeleton.dart';
 import '../../widgets/layout/app_header.dart';
 
-/// SCR-014 Wishlist: saved products (newest first), remove with Undo, add one or all in-stock items to the cart.
+/// SCR-014 Wishlist: saved products from the server (newest first), remove with Undo, add one or all
+/// in-stock items to the cart.
 /// Sold-out products stay in the list, but their cart button is disabled.
 class WishlistScreen extends StatelessWidget {
   const WishlistScreen({super.key});
 
   Future<void> _remove(BuildContext context, Product p) async {
     final wishlist = context.read<WishlistProvider>();
-    final index = await wishlist.remove(p.id);
-    if (index == -1 || !context.mounted) return;
-    showAppToast(context, 'Removed from wishlist', actionLabel: 'Undo', onAction: () => wishlist.restore(p.id, index));
+    final removed = await wishlist.remove(p.id);
+    if (!context.mounted) return;
+    if (removed == null) return showAppToast(context, 'Couldn’t remove ${p.name}. Please try again.');
+    showAppToast(context, 'Removed from wishlist', actionLabel: 'Undo', onAction: () => wishlist.save(removed.id, optimistic: removed));
   }
 
   Future<void> _addAll(BuildContext context, List<Product> products) async {
@@ -45,10 +46,9 @@ class WishlistScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final wishlist = context.watch<WishlistProvider>();
-    final products = context.watch<ProductProvider>();
-    final saved = [for (final id in wishlist.newestFirst) ?products.productById(id)];
+    final saved = wishlist.items; // newest first, from the server
     final inStock = saved.where((p) => p.inStock).toList();
-    final loading = (wishlist.isLoading || products.isLoading) && saved.isEmpty;
+    final loading = wishlist.isLoading && saved.isEmpty;
 
     return Scaffold(
       appBar: AppHeader(title: 'Wishlist', subtitle: saved.isEmpty ? null : '${saved.length} saved', showBack: false),
@@ -57,6 +57,8 @@ class WishlistScreen extends StatelessWidget {
         children: [
           if (loading)
             const ListSkeleton()
+          else if (wishlist.error != null && saved.isEmpty)
+            EmptyState(icon: Icons.wifi_off_rounded, title: 'Couldn’t load your wishlist', message: wishlist.error!, actionLabel: 'Try again', onAction: wishlist.load)
           else if (saved.isEmpty)
             EmptyState(
               icon: Icons.favorite_border_rounded,

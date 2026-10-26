@@ -1,24 +1,22 @@
-import 'dart:convert';
+import '../../models/cart/cart.dart';
+import '../api/api_client.dart';
 
-import 'package:shared_preferences/shared_preferences.dart';
-
-import '../../data/mock_data.dart';
-import '../../models/cart/cart_item.dart';
-
-/// Loads and saves the cart. Later: GET /cart, POST/PATCH/DELETE /cart/items.
+/// The cart through the API (CRT-*). Every change returns the whole updated cart, so totals and
+/// stock rules always come from the server. Failures throw ApiException, e.g. PRODUCT_OUT_OF_STOCK,
+/// INSUFFICIENT_STOCK or CART_ITEM_NOT_FOUND.
 class CartService {
-  static const _key = 'cart_items';
+  final ApiClient _api;
+  CartService([ApiClient? api]) : _api = api ?? ApiClient.instance;
 
-  Future<List<CartItem>> getCart() async {
-    await Future.delayed(mockDelay);
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    if (raw == null) return mockCartItems();
-    return (jsonDecode(raw) as List).map((e) => CartItem.fromJson(e as Map<String, dynamic>)).toList();
-  }
+  Future<Cart> getCart() async => Cart.fromJson(await _api.get('/cart') as Map<String, dynamic>);
 
-  Future<void> saveCart(List<CartItem> items) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, jsonEncode(items.map((e) => e.toJson()).toList()));
-  }
+  /// Adds [quantity] of a product; if it is already in the cart, its quantity goes up.
+  Future<Cart> addItem(String productId, int quantity) async =>
+      Cart.fromJson(await _api.post('/cart/items', body: {'productId': productId, 'quantity': quantity}) as Map<String, dynamic>);
+
+  /// Sets (doesn't add to) the quantity of one cart line.
+  Future<Cart> updateItem(String itemId, int quantity) async =>
+      Cart.fromJson(await _api.patch('/cart/items/$itemId', body: {'quantity': quantity}) as Map<String, dynamic>);
+
+  Future<Cart> removeItem(String itemId) async => Cart.fromJson(await _api.delete('/cart/items/$itemId') as Map<String, dynamic>);
 }

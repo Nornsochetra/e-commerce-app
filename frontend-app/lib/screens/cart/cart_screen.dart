@@ -27,8 +27,9 @@ class CartScreen extends StatelessWidget {
   Future<void> _remove(BuildContext context, CartItem item) async {
     final cart = context.read<CartProvider>();
     final removed = await cart.remove(item.productId);
-    if (removed == null || !context.mounted) return;
-    showAppToast(context, 'Removed from cart', actionLabel: 'Undo', onAction: () => cart.restore(removed.$1, removed.$2));
+    if (!context.mounted) return;
+    if (removed == null) return showAppToast(context, cart.lastError ?? 'Couldn’t remove that item. Please try again.');
+    showAppToast(context, 'Removed from cart', actionLabel: 'Undo', onAction: () => cart.restore(removed));
   }
 
   /// Moves the item to the wishlist; Undo puts it back in the cart (and un-saves it if it wasn't saved before).
@@ -36,13 +37,22 @@ class CartScreen extends StatelessWidget {
     final cart = context.read<CartProvider>();
     final wishlist = context.read<WishlistProvider>();
     final wasSaved = wishlist.contains(item.productId);
-    if (!wasSaved) await wishlist.toggle(item.productId);
+    if (!wasSaved) {
+      final error = await wishlist.save(item.productId);
+      if (error != null) return context.mounted ? showAppToast(context, error) : null;
+    }
     final removed = await cart.remove(item.productId);
-    if (removed == null || !context.mounted) return;
+    if (!context.mounted) return;
+    if (removed == null) return showAppToast(context, cart.lastError ?? 'Couldn’t move that item. Please try again.');
     showAppToast(context, 'Moved to wishlist', actionLabel: 'Undo', onAction: () {
-      cart.restore(removed.$1, removed.$2);
+      cart.restore(removed);
       if (!wasSaved) wishlist.remove(item.productId);
     });
+  }
+
+  Future<void> _setQuantity(BuildContext context, CartItem item, int quantity) async {
+    final error = await context.read<CartProvider>().setQuantity(item.productId, quantity);
+    if (error != null && context.mounted) showAppToast(context, error);
   }
 
   // Own messenger: toasts show above the Checkout dock instead of being covered by it.
@@ -57,6 +67,10 @@ class CartScreen extends StatelessWidget {
       appBar: AppHeader(title: 'My Cart', subtitle: hasItems ? _items(cart.itemCount) : null, showBack: false),
       body: cart.isLoading && !hasItems
           ? const Padding(padding: EdgeInsets.all(AppSpacing.page), child: ListSkeleton(count: 2))
+          : cart.error != null && !hasItems
+          ? ListView(children: [
+              EmptyState(icon: Icons.wifi_off_rounded, title: 'Couldn’t load your cart', message: cart.error!, actionLabel: 'Try again', onAction: cart.load),
+            ])
           : !hasItems
               ? ListView(
                   children: [
@@ -80,7 +94,8 @@ class CartScreen extends StatelessWidget {
                           key: ValueKey(item.productId),
                           item: item,
                           onOpen: () => context.push('/product/${item.productId}'),
-                          onQuantity: (q) => cart.setQuantity(item.productId, q),
+                          busy: cart.isUpdating(item.productId),
+                          onQuantity: (q) => _setQuantity(context, item, q),
                           onRemove: () => _remove(context, item),
                           onSaveForLater: () => _saveForLater(context, item),
                         ),

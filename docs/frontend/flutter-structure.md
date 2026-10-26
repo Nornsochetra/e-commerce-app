@@ -40,7 +40,8 @@ frontend-app/
     │   │   ├── category.dart
     │   │   └── product_filter.dart    search text, sort, in-stock-only (Categories)
     │   ├── cart/
-    │   │   └── cart_item.dart
+    │   │   ├── cart.dart              the server's cart: items, subtotal, item count
+    │   │   └── cart_item.dart         one cart line (its own id + the product id)
     │   ├── order/
     │   │   ├── order.dart
     │   │   └── order_item.dart
