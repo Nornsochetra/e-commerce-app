@@ -8,6 +8,16 @@
 class ApiConfig {
   static const baseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8081/api/v1');
 
+  /// One page of any list (products, wishlist, orders, notifications). Screens load the next page
+  /// while scrolling, so no list is ever loaded all at once (docs/api-convention.md §7).
+  static const pageSize = 20;
+
+  /// Products in each Home section ("Trending now", "New arrivals").
+  static const homeSectionSize = 4;
+
+  /// Products read for "You may also like" (2 are shown; one extra in case it is the product itself).
+  static const relatedSize = 3;
+
   static const connectTimeout = Duration(seconds: 10);
   static const receiveTimeout = Duration(seconds: 20);
 }

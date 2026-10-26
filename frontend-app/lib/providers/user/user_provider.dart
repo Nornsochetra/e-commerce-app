@@ -19,6 +19,13 @@ class UserProvider extends ChangeNotifier with FollowsSignIn {
   String? error; // couldn't load the profile
   String? saveError; // user-facing reason the last save failed
 
+  /// Home needs the name and the tab bar the cart count right away, so the profile loads on sign-in.
+  @override
+  bool get loadsOnSignIn => true;
+
+  /// Counts from the last GET /auth/me (refreshed when Profile opens).
+  UserCounts get counts => user?.counts ?? const UserCounts();
+
   @override
   Future<void> load() async {
     if (!signedIn) return;

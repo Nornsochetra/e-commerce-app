@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../data/mock_data.dart';
 import '../../providers/auth/auth_provider.dart';
 import '../../providers/cart/cart_provider.dart';
 import '../../providers/notification/notification_provider.dart';
 import '../../providers/order/order_provider.dart';
-import '../../providers/product/product_provider.dart';
 import '../../providers/user/user_provider.dart';
 import '../../providers/wishlist/wishlist_provider.dart';
 import '../../theme.dart';
@@ -19,10 +17,11 @@ import '../../widgets/feedback/confirm_dialog.dart';
 import '../../widgets/feedback/loading_skeleton.dart';
 import '../../widgets/feedback/status_badge.dart';
 import '../../widgets/layout/app_header.dart';
+import '../../utils/on_screen.dart';
 import 'widgets/edit_profile_sheet.dart';
 
 /// SCR-005/006 Profile: details with an Edit sheet, order / wishlist / cart counts, shopping links,
-/// deferred items marked "Soon", Reset demo data and Log out (both confirmed first).
+/// deferred items marked "Soon", and Log out (confirmed first).
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
@@ -37,7 +36,7 @@ class ProfileScreen extends StatelessWidget {
     final ok = await showConfirmDialog(
       context,
       title: 'Log out of APM?',
-      message: 'You’ll return to the sign-in screen. Your cart and wishlist stay saved on this device.',
+      message: 'You’ll return to the sign-in screen. Your cart and wishlist stay saved in your account.',
       confirmLabel: 'Log out',
       danger: true,
     );
@@ -46,34 +45,21 @@ class ProfileScreen extends StatelessWidget {
     if (context.mounted) context.go('/login');
   }
 
-  /// Restores the sample orders and notifications that are still mock data on this device.
-  /// Your account, profile, cart and wishlist live on the server and aren't touched.
-  Future<void> _resetDemo(BuildContext context) async {
-    final ok = await showConfirmDialog(
-      context,
-      title: 'Reset demo data?',
-      message: 'This restores the original sample orders and notifications on this device. Your account, cart and wishlist aren’t changed.',
-      confirmLabel: 'Reset',
-    );
-    if (!ok || !context.mounted) return;
-    final products = context.read<ProductProvider>();
-    final reloads = [
-      context.read<OrderProvider>().load,
-      context.read<NotificationProvider>().load,
-    ];
-    await resetDemoData();
-    products.resetFilter();
-    await Future.wait([for (final load in reloads) load()]);
-    if (context.mounted) showAppToast(context, 'Demo data restored');
-  }
-
   @override
   Widget build(BuildContext context) {
     final users = context.watch<UserProvider>();
     final user = users.user;
-    final orders = context.watch<OrderProvider>().orders;
-    final saved = context.watch<WishlistProvider>().count;
-    final inCart = context.watch<CartProvider>().itemCount;
+    // The numbers come from GET /auth/me until a screen has loaded the list itself, so opening
+    // Profile doesn't download orders, wishlist and cart.
+    final counts = users.counts;
+    final orderProvider = context.watch<OrderProvider>();
+    final orders = orderProvider.orders;
+    final wishlist = context.watch<WishlistProvider>();
+    final cart = context.watch<CartProvider>();
+    final orderCount = orderProvider.isLoaded ? orderProvider.totalOrders : counts.orders;
+    final saved = wishlist.isLoaded ? wishlist.total : counts.wishlistItems;
+    final inCart = cart.isLoaded ? cart.itemCount : counts.cartItems;
+    loadWhenOnScreen(context, context.read<NotificationProvider>().ensureUnreadCount);
     final unread = context.watch<NotificationProvider>().unreadCount;
     final active = orders.where((o) => o.isActive).length;
 
@@ -134,7 +120,7 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           Row(
             children: [
-              _Stat(value: orders.length, label: 'Orders', onTap: () => context.push('/orders')),
+              _Stat(value: orderCount, label: 'Orders', onTap: () => context.push('/orders')),
               const SizedBox(width: 10),
               _Stat(value: saved, label: 'Saved', onTap: () => context.go('/wishlist')),
               const SizedBox(width: 10),
@@ -160,7 +146,6 @@ class ProfileScreen extends StatelessWidget {
             const _MenuRow(icon: Icons.settings_outlined, title: 'Settings', neutral: true),
             const _MenuRow(icon: Icons.help_outline_rounded, title: 'About APM', neutral: true),
             const _MenuRow(icon: Icons.call_outlined, title: 'Contact us', neutral: true),
-            _MenuRow(icon: Icons.refresh_rounded, title: 'Reset demo data', subtitle: 'Restore the sample orders and notifications', neutral: true, onTap: () => _resetDemo(context)),
           ]),
 
           const SizedBox(height: AppSpacing.xxl),

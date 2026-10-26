@@ -1,9 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend_app/data/mock_data.dart';
+import 'package:frontend_app/models/order/checkout.dart' show standardDeliveryFeeUsd;
 import 'package:frontend_app/providers/auth/auth_provider.dart';
 import 'package:frontend_app/providers/cart/cart_provider.dart';
 import 'package:frontend_app/services/api/api_client.dart';
 
+import '../fake_catalog.dart';
 import '../fake_api.dart';
 
 void main() {
@@ -25,7 +26,7 @@ void main() {
   test('loads the server cart; the server calculates the totals', () {
     expect(cart.itemCount, 3); // 1 watch + 2 backpacks
     expect(cart.subtotal, 89 + 2 * 58);
-    expect(cart.total, cart.subtotal + deliveryFeeUsd); // delivery is only an estimate here
+    expect(cart.total, cart.subtotal + standardDeliveryFeeUsd); // delivery is only an estimate here
     expect(cart.items.first.id, isNot(cart.items.first.productId)); // cart lines have their own id
   });
 

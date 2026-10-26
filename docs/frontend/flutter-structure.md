@@ -8,8 +8,8 @@ How the APM (All Products Marketplace) Flutter app in `frontend-app/` is organis
 |---|---|
 | State management | [`provider`](https://pub.dev/packages/provider) — one `ChangeNotifier` per area |
 | Navigation | [`go_router`](https://pub.dev/packages/go_router) |
-| Data | Mock data first. Services return `Future`s, so the Spring backend can replace the mock later without changing screens. |
-| Saving mock data | [`shared_preferences`](https://pub.dev/packages/shared_preferences) — cart, wishlist, orders and profile survive closing the app |
+| Data | From the Spring API. Services return `Future`s; screens only talk to providers. |
+| Saving on the device | [`shared_preferences`](https://pub.dev/packages/shared_preferences) only for the "continue as guest" flag; everything else lives on the server |
 | Font | Manrope, bundled in `assets/fonts/` |
 | Images | Product photos come from the API, so they stay as URLs. Images the API never sends are bundled in `assets/`: Home banner photos, the APM logo, category icons and the image placeholder. |
 | Vector images | SVG files shown with [`flutter_svg`](https://pub.dev/packages/flutter_svg); other UI icons use Flutter's built-in Material icons |
@@ -51,9 +51,6 @@ frontend-app/
     │   │   └── user.dart
     │   └── common/
     │       └── page_result.dart       one page of a paginated API list (items, page, hasNext)
-    │
-    ├── data/
-    │   └── mock_data.dart             sample products, orders, notifications, user
     │
     ├── services/                      fetch and save data (return Future)
     │   ├── api/                       shared by every service that calls the Spring API
@@ -174,7 +171,7 @@ The seven areas are the same everywhere: **auth, product, cart, order, wishlist,
 ## 4. How the layers work together
 
 ```
-Screen  ──reads/calls──▶  Provider  ──awaits──▶  Service  ──▶  mock data now / Spring API later
+Screen  ──reads/calls──▶  Provider  ──awaits──▶  Service  ──▶  ApiClient  ──▶  Spring API
    ▲                          │
    └──── notifyListeners() ───┘   (every screen showing that data rebuilds)
 ```
@@ -189,8 +186,8 @@ Example, with the same pattern for every area:
 // services/product/product_service.dart
 class ProductService {
   Future<List<Product>> getProducts() async {
-    await Future.delayed(const Duration(milliseconds: 400)); // mock network delay
-    return mockProducts; // later: http.get('$baseUrl/api/v1/products')
+    final data = await ApiClient.instance.get('/products', auth: false);
+    return PageResult.fromJson(data, Product.fromJson).items;
   }
 }
 
@@ -253,7 +250,10 @@ The bottom tab bar shows **Home, Categories, Wishlist, Cart, Profile**. Product 
 ```
 frontend-app/
 ├── test/                              unit + widget tests (flutter test)
-│   ├── helpers.dart                   phone-sized screen, wait/tap helpers
+│   ├── helpers.dart                   phone-sized screen, wait/tap helpers, app start against the fake backend
+│   ├── fake_api.dart                  in-memory fake of every API endpoint the app calls
+│   ├── fake_catalog.dart              the sample categories and products the fake serves
+│   ├── api/                           ApiClient tests + live tests against a running backend (opt-in)
 │   ├── app_test.dart                  splash → sign in → guest → cart redirect
 │   ├── providers/                     provider rules (cart totals, stock limits, saving)
 │   ├── screens/                       screen behaviour (validation, messages)

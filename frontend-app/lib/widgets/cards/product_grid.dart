@@ -29,7 +29,7 @@ class ProductGrid extends StatelessWidget {
         for (final p in products)
           ProductCard(
             product: p,
-            isFavorite: wishlist.contains(p.id),
+            isFavorite: wishlist.isSaved(p),
             onTap: () => context.push('/product/${p.id}'),
             onFavorite: () => toggleWishlistWithToast(context, p),
             onAdd: () => addToCartWithToast(context, p),

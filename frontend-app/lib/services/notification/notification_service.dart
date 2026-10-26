@@ -1,32 +1,27 @@
-import 'dart:convert';
-
-import 'package:shared_preferences/shared_preferences.dart';
-
-import '../../data/mock_data.dart';
+import '../../models/common/page_result.dart';
 import '../../models/notification/app_notification.dart';
+import '../api/api_client.dart';
+import '../api/api_config.dart';
 
-/// Loads and saves notifications. Later: GET /notifications, POST /notifications/{id}/read, …
+/// The in-app inbox through the API (NTF-*). Failures throw ApiException.
 class NotificationService {
-  static const _key = 'notifications';
+  final ApiClient _api;
+  NotificationService([ApiClient? api]) : _api = api ?? ApiClient.instance;
 
-  Future<List<AppNotification>> getNotifications() async {
-    await Future.delayed(mockDelay);
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    if (raw == null) return mockNotifications();
-    return (jsonDecode(raw) as List).map((e) => AppNotification.fromJson(e as Map<String, dynamic>)).toList();
-  }
+  /// Newest first.
+  Future<PageResult<AppNotification>> getPage({int page = 0, int size = ApiConfig.pageSize}) async => PageResult.fromJson(
+        await _api.get('/notifications', query: {'page': page, 'size': size, 'filter': 'all'}) as Map<String, dynamic>,
+        AppNotification.fromJson,
+      );
 
-  Future<void> saveNotifications(List<AppNotification> items) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, jsonEncode(items.map((e) => e.toJson()).toList()));
-  }
+  Future<int> getUnreadCount() async => ((await _api.get('/notifications/unread-count') as Map<String, dynamic>)['unreadCount'] as num).toInt();
 
-  /// Adds a new unread notification at the top (used when an order is placed).
-  Future<void> addNotification({required NotificationType type, required String title, required String message}) async {
-    final items = await getNotifications();
-    final now = DateTime.now();
-    items.insert(0, AppNotification(id: 'n-${now.microsecondsSinceEpoch}', type: type, title: title, message: message, createdAt: now));
-    await saveNotifications(items);
-  }
+  /// Returns the notification as now stored (with its read time).
+  Future<AppNotification> markRead(String id) async => AppNotification.fromJson(await _api.post('/notifications/$id/read') as Map<String, dynamic>);
+
+  /// Returns the unread count afterwards.
+  Future<int> markAllRead() async => ((await _api.post('/notifications/read-all') as Map<String, dynamic>)['unreadCount'] as num).toInt();
+
+  /// Clears the inbox on the server. This can't be undone.
+  Future<void> clearAll() => _api.delete('/notifications');
 }

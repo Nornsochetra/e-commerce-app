@@ -34,9 +34,11 @@ class _ApmAppState extends State<ApmApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: widget.authProvider),
-        ChangeNotifierProvider(create: (_) => ProductProvider()..load()),
-        // The customer's own data follows sign-in: loaded after signing in, cleared for guests and
-        // after signing out (providers/auth/follows_sign_in.dart).
+        // The catalog loads when a screen needs it, and what's on screen is re-read when someone signs
+        // in or out, so the `saved` hearts belong to the right person.
+        ChangeNotifierProxyProvider<AuthProvider, ProductProvider>(create: (_) => ProductProvider(), update: (_, auth, p) => p!..syncAuth(auth.status)),
+        // The customer's own data follows sign-in: each screen loads what it shows when it opens, and
+        // it is cleared for guests and after signing out (providers/auth/follows_sign_in.dart).
         ChangeNotifierProxyProvider<AuthProvider, CartProvider>(create: (_) => CartProvider(), update: (_, auth, p) => p!..syncWith(auth.status)),
         ChangeNotifierProxyProvider<AuthProvider, WishlistProvider>(create: (_) => WishlistProvider(), update: (_, auth, p) => p!..syncWith(auth.status)),
         ChangeNotifierProxyProvider<AuthProvider, OrderProvider>(create: (_) => OrderProvider(), update: (_, auth, p) => p!..syncWith(auth.status)),

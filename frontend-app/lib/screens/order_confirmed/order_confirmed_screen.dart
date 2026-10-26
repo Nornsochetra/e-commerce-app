@@ -19,12 +19,23 @@ class OrderConfirmedScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final order = context.watch<OrderProvider>().orderById(orderId);
+    final orders = context.watch<OrderProvider>();
+    final order = orders.orderById(orderId);
     if (order == null) {
+      final error = orders.orderError(orderId);
+      // Known right after placing it; when this page is opened directly, read it from the server.
+      if (!orders.isLoadingOrder(orderId) && !orders.isMissing(orderId) && error == null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => orders.loadOrder(orderId));
+      }
       return Scaffold(
         appBar: const AppHeader(title: 'Order', backFallback: '/orders'),
         body: ListView(children: [
-          EmptyState(icon: Icons.inventory_2_outlined, title: 'Order not found', message: 'We couldn’t find that order.', actionLabel: 'View my orders', onAction: () => context.go('/orders')),
+          if (orders.isMissing(orderId))
+            EmptyState(icon: Icons.inventory_2_outlined, title: 'Order not found', message: 'We couldn’t find that order.', actionLabel: 'View my orders', onAction: () => context.go('/orders'))
+          else if (error != null)
+            EmptyState(icon: Icons.wifi_off_rounded, title: 'Couldn’t load this order', message: error, actionLabel: 'Try again', onAction: () => orders.loadOrder(orderId))
+          else
+            const Padding(padding: EdgeInsets.all(AppSpacing.page), child: Center(child: CircularProgressIndicator())),
         ]),
       );
     }

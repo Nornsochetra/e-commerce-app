@@ -34,7 +34,7 @@ void main() {
     expect(find.text('1 saved'), findsOneWidget);
     await wait(tester, steps: 2);
     await tester.tap(find.text('Undo'));
-    await tester.pump();
+    await wait(tester, steps: 1); // Undo saves it again on the server
     expect(find.text('2 saved'), findsOneWidget);
 
     await tapAboveTabBar(tester, find.text('Add all in stock to cart (2)'));
@@ -42,7 +42,7 @@ void main() {
     expect(find.text('Added 2 items to cart'), findsOneWidget);
   });
 
-  testWidgets('notifications: groups, filters, mark read, clear with undo', (tester) async {
+  testWidgets('notifications: groups, filters, mark read, clear all after confirming', (tester) async {
     await startSignedIn(tester);
     await tester.tap(find.byTooltip('Notifications, 2 unread'));
     await wait(tester);
@@ -52,10 +52,10 @@ void main() {
 
     await tester.tap(find.text('Mark as read').first);
     await tester.pump();
-    expect(find.text('1 unread'), findsOneWidget);
+    expect(find.text('1 unread'), findsOneWidget); // changes at once, saved in the background
 
     await tester.tap(find.byTooltip('Mark all as read'));
-    await tester.pump();
+    await wait(tester, steps: 1);
     expect(find.text('All caught up'), findsOneWidget);
     await tester.tap(find.widgetWithText(CategoryChip, 'Unread'));
     await tester.pump();
@@ -64,12 +64,12 @@ void main() {
     await tester.tap(find.widgetWithText(AppButton, 'Show all'));
     await tester.pump();
     await tapAboveTabBar(tester, find.text('Clear all notifications'));
-    await tester.pump();
-    expect(find.text('No notifications'), findsOneWidget);
     await wait(tester, steps: 2);
-    await tester.tap(find.text('Undo'));
-    await tester.pump();
-    expect(find.text('TODAY'), findsOneWidget);
+    expect(find.text('Clear all notifications?'), findsOneWidget); // the server can't undo it, so it asks first
+    await tester.tap(find.widgetWithText(AppButton, 'Clear all'));
+    await wait(tester, steps: 2);
+    expect(find.text('No notifications'), findsOneWidget);
+    expect(find.text('Undo'), findsNothing);
   });
 
   testWidgets('tapping an order notification marks it read and opens that order', (tester) async {
@@ -133,24 +133,5 @@ void main() {
     await tester.tap(find.widgetWithText(AppButton, 'Log out').last);
     await wait(tester);
     expect(find.text('Welcome back'), findsOneWidget);
-  });
-
-  testWidgets('reset demo data keeps you signed in and leaves the server cart alone', (tester) async {
-    await startSignedIn(tester);
-    await openTab(tester, 'Cart');
-    await tester.tap(find.byTooltip('Remove Minimal Watch from cart'));
-    await wait(tester, steps: 2);
-    expect(find.text('2 items'), findsOneWidget);
-
-    await openTab(tester, 'Profile');
-    await tapAboveTabBar(tester, find.text('Reset demo data'));
-    await wait(tester, steps: 2);
-    await tester.tap(find.widgetWithText(AppButton, 'Reset'));
-    await wait(tester, steps: 4);
-    expect(find.text('Demo data restored'), findsOneWidget);
-    expect(find.text('Welcome back'), findsNothing); // still signed in; the account is on the server
-
-    await openTab(tester, 'Cart');
-    expect(find.text('2 items'), findsOneWidget); // the cart is real data now, not demo data
   });
 }

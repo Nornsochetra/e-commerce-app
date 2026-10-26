@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_app/models/common/page_result.dart';
@@ -69,6 +71,28 @@ void main() {
     expect(adapter.requests.where((r) => r.path == '/auth/refresh'), hasLength(1));
     expect(adapter.requests.firstWhere((r) => r.path == '/auth/refresh').data, {'refreshToken': 'refresh-1'});
     expect((await tokens.read())!.refreshToken, 'refresh-2');
+  });
+
+  test('an access token about to expire is refreshed before the request, without a 401 first', () async {
+    String jwt(Duration fromNow) {
+      String part(Map<String, dynamic> json) => base64Url.encode(utf8.encode(jsonEncode(json))).replaceAll('=', '');
+      final exp = DateTime.now().add(fromNow).millisecondsSinceEpoch ~/ 1000;
+      return '${part({'alg': 'RS256'})}.${part({'sub': '1', 'exp': exp})}.signature';
+    }
+
+    final (api, adapter, tokens) = client((r) async {
+      if (r.path == '/auth/refresh') return (200, ok({'accessToken': 'new-access', 'refreshToken': 'refresh-2', 'expiresIn': 900}));
+      return r.headers['Authorization'] == 'Bearer new-access' ? (200, ok({'ok': true})) : (401, fail('INVALID_TOKEN'));
+    });
+
+    await tokens.save(TokenPair(accessToken: jwt(const Duration(seconds: 20)), refreshToken: 'refresh-1'));
+    expect(await api.get('/products'), {'ok': true});
+    expect(adapter.requests.map((r) => r.path), ['/auth/refresh', '/products']); // refreshed first, no 401
+
+    adapter.requests.clear();
+    await tokens.save(TokenPair(accessToken: jwt(const Duration(minutes: 10)), refreshToken: 'refresh-2'));
+    await api.get('/products').catchError((_) => null);
+    expect(adapter.requests.first.path, '/products'); // plenty of time left: no early refresh
   });
 
   test('when the refresh token is rejected the tokens are cleared and the session-expired callback runs', () async {

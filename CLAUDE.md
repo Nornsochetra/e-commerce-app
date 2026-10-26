@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 APM (All Products Marketplace, formerly "Mercato") is a mobile e-commerce app (Setec Institute year-4 project), split into three parts:
 
 - `backend/` — Spring Boot 4 / Java 21 REST API (`com.setec.ecommerce`). **All v1 endpoints are implemented and tested.**
-- `frontend-app/` — Flutter app (Android/iOS phones, portrait), all screens built from the prototype with mock data (not yet connected to the backend). See **Flutter app status** below.
+- `frontend-app/` — Flutter app (Android/iOS phones, portrait), all screens built from the prototype and connected to the backend API. See **Flutter app status** below.
 - `docs/` — the source of truth for behavior. Read the relevant doc before changing a feature.
   - `requirement.md` (scope, screen inventory SCR-001…022, system-wide business rules), `usecase.md`, `features/*.md` (per-feature specs), `api-convention.md`, `api-specification.md` (every endpoint, keyed by ApiId), `data-model.md`, `backend/backend-patterns.md`, `frontend/flutter-structure.md` (agreed Flutter folder structure, Provider + go_router, build order).
   - `prototype/` — approved, clickable HTML UI prototype (React + Babel + Tailwind via CDN, mock data in `localStorage`). It is the visual spec for the Flutter screens. Opens from `file://` with no build step; see `prototype/README.md`.
@@ -58,7 +58,7 @@ Built in five slices; the user reviews each slice before the next starts, and co
 | 4 | Cart, Checkout, Order confirmed, My orders, Order details | Done |
 | 5 | Wishlist, Notifications, Profile (edit sheet, log out) | Done |
 
-All 15 screens are built from the prototype. They are now being connected to the Spring backend, again in reviewed slices:
+All 15 screens are built from the prototype and connected to the Spring backend, in these reviewed slices:
 
 | API slice | Scope | Status |
 |---|---|---|
@@ -66,24 +66,30 @@ All 15 screens are built from the prototype. They are now being connected to the
 | B | Auth + profile (login, register, logout, forgot password, `/auth/me`, `PATCH /me/profile`); drop the mock demo account | Done |
 | C | Catalog: categories, server-side search/sort/filter, paging, product details | Done |
 | D | Cart + wishlist on the server (cart items have their own `itemId`) | Done |
-| E | Orders (preview, place with `Idempotency-Key`, history) + notifications | Next |
+| E | Orders (preview, place with `Idempotency-Key`, history) + notifications | Done |
 
 Known API differences to handle: register takes no phone (send it via `PATCH /me/profile`), `DELETE /notifications` has no undo, lists are paginated, money is `{amount: "89.00", currency}`, badges arrive lowercase and unordered (use `Product.cardBadge` / `badgesInOrder`).
 
-Catalog (slice C): `ProductProvider.load()` reads categories and one page of up to 100 products (Home sections, related products, and id lookups for the still-mock cart/wishlist/orders); the Categories screen searches on the server (`showCategory`, `updateFilter` with a 300 ms typing pause, `loadMoreResults` while scrolling); product details call `loadProduct`. Catalog reads are public (`auth: false`).
-
-Cart + wishlist (slice D): every cart change returns the whole cart, so totals and stock rules are the server's (`CartProvider` shows what comes back; a line's stepper is disabled while its change is in flight; stock errors become toasts). `CartItem.id` is the cart line, `productId` the product. The wishlist holds full products, newest first; hearts change at once and roll back with a message on failure; Undo saves again. Only orders and notifications are still mock data (`data/mock_data.dart`, `shared_preferences`).
+How the API is used (details in each provider):
+- **Catalog (C):** Home reads categories plus two small product sections (`ensureHome()`); related products and product details are their own requests (`loadRelated`, `ensureProduct`). The Categories screen searches on the server (`showCategory`, `updateFilter` with a 300 ms typing pause, `loadMoreResults` while scrolling); product details call `loadProduct`. Catalog reads are public (`auth: false`).
+- **Cart + wishlist (D):** every cart change returns the whole cart, so totals and stock rules are the server's (a line's stepper is disabled while its change is in flight; stock errors become toasts). `CartItem.id` is the cart line, `productId` the product. The wishlist holds full products, newest first; hearts change at once and roll back with a message on failure; Undo saves again.
+- **Orders + notifications (E):** checkout shows `POST /orders/preview` totals and places with `POST /orders` + `Idempotency-Key` (one key per set of delivery details: a retry can never duplicate; changed details get a new key). The server empties the ordered items from the cart and creates an "Order placed" notification, so both reload afterwards. Order history is `OrderSummary` pages (no item lines or photos); details are `Order` via `loadOrder` (item photos come from the catalog). Notifications are paged with a server unread count; "Clear all" asks first because the server can't undo it. References look like `MC-1A2B3C4D5E6F`.
+- Nothing is mock data any more: `lib/data/` is gone. Only the guest flag lives in `shared_preferences`.
+- **Lazy loading:** signing in loads only the profile (`GET /auth/me`, whose `counts` drive the cart badge and Profile numbers). Each screen loads what it shows only while it is on screen (`utils/on_screen.dart` `loadWhenOnScreen` — background tabs kept alive by the shell never fetch; `ensureLoaded()` from `FollowsSignIn`, `ProductProvider.ensureHome()`), so Home requests only its catalog sections, the active-order banner and the unread count. Cart, wishlist, orders and notifications load on their own screens.
+- **Paging:** every list request uses `ApiConfig.pageSize` (20) and loads the next page while scrolling; section sizes (`homeSectionSize`, `relatedSize`) also live in `ApiConfig`. Never request a list all at once.
+- **Hearts** use `Product.saved` from the catalog (sent when the request carries a token) plus hearts tapped this session (`WishlistProvider.isSaved`), so the wishlist is never downloaded just to draw hearts. Signing in/out requests nothing: catalog data is marked out of date and each screen re-reads it when next shown.
+- **Tokens** are refreshed shortly before the access token expires (`exp` read from the JWT), and once more on a 401.
 
 ## Flutter architecture (full spec: `docs/frontend/flutter-structure.md`)
 
 - **Beginner structure, grouped by type:** `models/`, `services/`, `providers/` are each split into the same areas (auth, product, cart, order, wishlist, notification, user); `screens/<screen>/<screen>_screen.dart` with an optional `widgets/` subfolder for screen-only widgets; shared widgets in `widgets/{layout,buttons,inputs,cards,feedback}`; `theme.dart` (all colours/text/spacing tokens — use `AppColors`, `AppText`, `AppSpacing`, never raw values), `router.dart`, `utils/`.
-- **Data flow:** screen → `context.watch/read<XProvider>()` → provider (`ChangeNotifier`, holds `isLoading`/`error`) → service (every method returns a `Future`; mock data from `data/mock_data.dart` with a 300 ms delay, saved with `shared_preferences`). Connecting the Spring backend means changing only the services. Screens never call services directly.
+- **Data flow:** screen → `context.watch/read<XProvider>()` → provider (`ChangeNotifier`, holds `isLoading`/`error`) → service (every method returns a `Future` and calls the API through `ApiClient`). Screens never call services directly.
 - **API layer (`services/api/`):** one shared `ApiClient.instance` (dio) sends the bearer token, unwraps the `ApiResponse` envelope, refreshes tokens once on a 401 and retries, and throws `ApiException`. Show `e.userMessage` (mapped from the error `code`), never the server's message. Tokens live in `flutter_secure_storage`. Being offline never signs the user out.
 - **Navigation (go_router):** `StatefulShellRoute` with 5 tabs (Home, Categories, Wishlist, Cart, Profile) rendered by `widgets/layout/main_shell.dart`; `/notifications` lives in the Home branch and `/orders`, `/orders/:id` in the Profile branch (tab bar stays visible). Full screen: splash, auth, `/product/:id`, `/checkout`, `/orders/:id/confirmed`. A redirect sends guests to `/login?from=…` for cart, wishlist, checkout, orders, profile and notifications.
 - **Assets:** only images the API never sends are bundled — Manrope font, Home banner photos (`assets/images/banners/`), logo/category icons/placeholder as SVG (`assets/icons/`, via `flutter_svg`). Product photos stay as URLs (`imageUrl`). UI icons use Material icons.
 - **Brand:** APM — All Products Marketplace (green/white). Logo mark `assets/icons/logo_mark.svg` (shown by `widgets/layout/brand_logo.dart`; the prototype uses a copy in `docs/prototype/assets/logo-mark.svg`). Launcher icons are generated from `branding/app_icon.svg` with `python tool/generate_icons.py` (needs Chrome + Pillow) — don't edit the PNGs by hand.
 - **Auth:** email + password only through the API — no Google/Apple sign-in. Signed in = tokens in secure storage; "Continue as guest" is a local flag. `UserProvider` follows `AuthProvider` (ProxyProvider in `main.dart`): profile loads from `GET /auth/me` after sign-in and clears after sign-out. A failed token refresh signs out and Sign in shows "Your session has ended". Debug builds offer the backend dev account (`services/auth/dev_account.dart`, from `V2__seed_users.sql`) as "Fill in".
-- **Widget tests use a fake backend** (`test/fake_api.dart`, set up by `startAppAtLogin` in `test/helpers.dart`), so they never need the server. The simulator screenshot test (`integration_test/`) uses the real API, so start the backend first.
+- **Widget tests use a fake backend** (`test/fake_api.dart` + the sample catalog in `test/fake_catalog.dart`, set up by `startAppAtLogin` in `test/helpers.dart`) that mimics every endpoint the app calls, so they never need the server. Its dev account starts with a cart, wishlist, 2 orders and 4 notifications. The simulator screenshot test (`integration_test/`) uses the real API, so start the backend first.
 - **Tests:** `test/helpers.dart` gives a phone-sized screen and `wait`/`tapVisible` helpers. Use `wait(tester)` instead of `pumpAndSettle` — some animations (splash rings, skeletons) repeat forever.
 
 ## Backend architecture (read `docs/backend/backend-patterns.md` for the full rules)

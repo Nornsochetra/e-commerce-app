@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../data/mock_data.dart' show deliveryFeeUsd;
+import '../../models/order/checkout.dart' show standardDeliveryFeeUsd;
 import '../../models/product/product.dart';
 import '../../providers/cart/cart_provider.dart';
 import '../../providers/product/product_provider.dart';
@@ -24,6 +24,7 @@ import '../../widgets/inputs/quantity_stepper.dart';
 import '../../widgets/layout/action_dock.dart';
 import '../../widgets/layout/app_header.dart';
 import '../../widgets/layout/section_header.dart';
+import '../../utils/on_screen.dart';
 
 /// SCR-010 Product details: photo, name, rating, stock, price, description, delivery info,
 /// "You may also like", and a sticky dock with quantity + Add to cart (or Save for later when sold out).
@@ -81,9 +82,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       );
     }
 
-    final isFavorite = context.watch<WishlistProvider>().contains(p.id);
-    final inCart = context.watch<CartProvider>().quantityOf(p.id);
-    final related = products.related(p);
+    final isFavorite = context.watch<WishlistProvider>().isSaved(p);
+    final cart = context.watch<CartProvider>();
+    final inCart = cart.quantityOf(p.id);
+    final related = products.relatedTo(p.id);
+    // "You may also like" and "N already in your cart" load with this page.
+    loadWhenOnScreen(context, () {
+      products.ensureProduct(widget.productId); // e.g. after signing in from this page
+      products.loadRelated(p);
+      cart.ensureLoaded();
+    });
     final quantity = math.min(_quantity, math.max(1, p.availableQuantity)); // stock may have dropped
 
     return Scaffold(
@@ -278,7 +286,7 @@ class _Highlights extends StatelessWidget {
       child: Column(
         children: [
           row(Icons.local_shipping_outlined, TextSpan(text: 'Standard delivery in 2–4 business days', children: [
-            TextSpan(text: ' · ${formatMoney(deliveryFeeUsd)}', style: const TextStyle(color: AppColors.textMuted)),
+            TextSpan(text: ' · ${formatMoney(standardDeliveryFeeUsd)}', style: const TextStyle(color: AppColors.textMuted)),
           ])),
           const SizedBox(height: AppSpacing.md),
           row(Icons.payments_outlined, const TextSpan(text: 'Pay with cash on delivery')),
@@ -333,7 +341,7 @@ class _Details extends StatelessWidget {
         section(
           'Delivery & payment',
           Text(
-            'Orders ship by standard delivery in 2–4 business days for a flat ${formatMoney(deliveryFeeUsd)}. '
+            'Orders ship by standard delivery in 2–4 business days for a flat ${formatMoney(standardDeliveryFeeUsd)}. '
             'Cash on delivery is the only payment method in this version.',
             style: AppText.bodyMuted,
           ),

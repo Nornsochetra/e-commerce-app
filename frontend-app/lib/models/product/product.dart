@@ -11,6 +11,7 @@ class Product {
   final String imageUrl; // product photos come from the API, so they stay as URLs
   final List<String> badges; // e.g. NEW, BESTSELLER, PREMIUM_PICK
   final bool featured;
+  final bool saved; // in the signed-in customer's wishlist (always false for guests)
 
   const Product({
     required this.id,
@@ -24,9 +25,26 @@ class Product {
     required this.imageUrl,
     this.badges = const [],
     this.featured = false,
+    this.saved = false,
   });
 
   bool get inStock => availableQuantity > 0;
+
+  /// The same product with another saved state (e.g. clearing hearts after signing out).
+  Product withSaved(bool value) => Product(
+        id: id,
+        name: name,
+        description: description,
+        categoryId: categoryId,
+        categoryName: categoryName,
+        price: price,
+        availableQuantity: availableQuantity,
+        rating: rating,
+        imageUrl: imageUrl,
+        badges: badges,
+        featured: featured,
+        saved: value,
+      );
 
   /// Badges in display order. The API sends them in no particular order, and the client picks
   /// the right one per context (docs/api-specification.md §4.4): NEW first, then BESTSELLER, PREMIUM_PICK.
@@ -61,6 +79,7 @@ class Product {
       imageUrl: json['imageUrl'] as String? ?? '',
       badges: [for (final b in json['badges'] as List? ?? const []) (b as String).toUpperCase()],
       featured: json['featured'] as bool? ?? false,
+      saved: json['saved'] as bool? ?? false,
     );
   }
 }

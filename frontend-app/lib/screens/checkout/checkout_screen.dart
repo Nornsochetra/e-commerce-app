@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/order/checkout.dart';
+import '../../models/order/order_item.dart';
 import '../../providers/cart/cart_provider.dart';
 import '../../providers/notification/notification_provider.dart';
 import '../../providers/order/order_provider.dart';
@@ -20,7 +22,8 @@ import '../../widgets/layout/action_dock.dart';
 import '../../widgets/layout/app_header.dart';
 import 'widgets/delivery_details.dart';
 
-/// SCR-015 Checkout: delivery address (view / edit), payment method, order review and a Place order dock.
+/// SCR-015 Checkout: delivery address (view / edit), payment method, order review with the totals the
+/// server calculates (POST /orders/preview) and a Place order dock (POST /orders with an Idempotency-Key).
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
 
@@ -29,8 +32,6 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  // One key per checkout visit: retrying after an error can never create a second order.
-  final _idempotencyKey = 'checkout-${DateTime.now().microsecondsSinceEpoch}';
   late final TextEditingController _name;
   late final TextEditingController _email;
   late final TextEditingController _address;
@@ -40,17 +41,44 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _editing = false;
   bool _showErrors = false;
   String? _placeError;
+  bool _cartProblem = false; // stock or empty cart: offer "Review cart"
+
+  CheckoutPreview? _preview; // totals calculated by the server for the current details
+  bool _previewing = false;
+
+  // One Idempotency-Key per set of delivery details: retrying the same details can never create a
+  // second order, and changed details get a new key (the server rejects a reused key with new details).
+  String? _idempotencyKey;
+  Delivery? _keyFor;
 
   @override
   void initState() {
     super.initState();
-    // Prefill from the profile and the address of the last order.
+    // Prefill from the profile and, when known, the address of the last order.
     final user = context.read<UserProvider>().user;
-    final orders = context.read<OrderProvider>().orders;
+    final orders = context.read<OrderProvider>();
+    final last = orders.orders.isEmpty ? null : orders.orderById(orders.orders.first.id);
     _name = TextEditingController(text: user?.name ?? '');
     _email = TextEditingController(text: user?.email ?? '');
-    _address = TextEditingController(text: orders.isEmpty ? '' : orders.first.address);
-    _editing = _errors.isNotEmpty; // open the form straight away when something is missing
+    _address = TextEditingController(text: last?.address ?? '');
+    WidgetsBinding.instance.addPostFrameCallback((_) => _prefillAndPreview());
+  }
+
+  /// Reads the last order (for its address) if needed, then asks the server for the totals.
+  Future<void> _prefillAndPreview() async {
+    final orders = context.read<OrderProvider>();
+    await Future.wait([context.read<CartProvider>().ensureLoaded(), orders.ensureLoaded()]);
+    if (!mounted) return;
+    if (_address.text.isEmpty && orders.orders.isNotEmpty) {
+      final lastId = orders.orders.first.id;
+      await orders.loadOrder(lastId);
+      final address = orders.orderById(lastId)?.address;
+      if (!mounted) return;
+      if (_address.text.isEmpty && address != null) _address.text = address;
+    }
+    if (!mounted) return;
+    setState(() => _editing = _errors.isNotEmpty); // open the form straight away when something is missing
+    await _refreshPreview();
   }
 
   @override
@@ -70,6 +98,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'address': ?validateAddress(_address.text),
       };
 
+  Delivery get _delivery => Delivery(recipientName: _name.text, email: _email.text, address: _address.text);
+
+  /// Asks the server what the current cart will cost (needs complete delivery details).
+  Future<void> _refreshPreview() async {
+    if (_errors.isNotEmpty) return;
+    setState(() => _previewing = true);
+    final (preview, problem) = await context.read<OrderProvider>().preview(_delivery);
+    if (!mounted) return;
+    setState(() {
+      _previewing = false;
+      _preview = preview;
+      _placeError = problem?.userMessage;
+      _cartProblem = problem?.code == 'INSUFFICIENT_STOCK' || problem?.code == 'CART_EMPTY';
+    });
+  }
+
+  void _toggleEditing() {
+    final wasEditing = _editing;
+    setState(() => _editing = !_editing);
+    if (wasEditing) _refreshPreview(); // "Done": recalculate for the new details
+  }
+
   Future<void> _placeOrder() async {
     final errors = _errors;
     if (errors.isNotEmpty) {
@@ -87,24 +137,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final cart = context.read<CartProvider>();
     final orders = context.read<OrderProvider>();
     final notifications = context.read<NotificationProvider>();
-    if (orders.isPlacing) return; // double tap
 
-    final order = await orders.placeOrder(
-      idempotencyKey: _idempotencyKey,
-      items: cart.items,
-      recipientName: _name.text,
-      email: _email.text,
-      address: _address.text,
-    );
+    final delivery = _delivery;
+    if (_idempotencyKey == null || _keyFor != delivery) {
+      _idempotencyKey = 'checkout-${DateTime.now().microsecondsSinceEpoch}';
+      _keyFor = delivery;
+    }
+    final (order, problem) = await orders.placeOrder(delivery, idempotencyKey: _idempotencyKey!);
     if (!mounted) return;
     if (order == null) {
-      setState(() => _placeError = 'We couldn’t place your order. Check your connection and try again — you won’t be charged twice.');
+      if (problem == null) return; // a second tap while the first was still placing
+      if (problem.code == 'CONFLICT') _idempotencyKey = null; // details changed: the next try gets a new key
+      setState(() {
+        _placeError = problem.isConnectionProblem ? '${problem.userMessage} Trying again won’t create a second order.' : problem.userMessage;
+        _cartProblem = problem.code == 'INSUFFICIENT_STOCK' || problem.code == 'CART_EMPTY';
+      });
+      if (_cartProblem) cart.load(); // show the current stock in the cart
       return;
     }
     // go() replaces checkout, so Back from the confirmation can't return to an empty checkout.
     context.go('/orders/${order.id}/confirmed');
-    await cart.clear();
-    await notifications.load(); // the new "Order confirmed" notification
+    cart.load(); // the server already removed the ordered items
+    notifications.load(); // and created the "Order placed" notification
   }
 
   @override
@@ -113,7 +167,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final placing = context.watch<OrderProvider>().isPlacing;
     const header = AppHeader(title: 'Checkout', backFallback: '/cart');
 
-    if (cart.items.isEmpty) {
+    if (cart.items.isEmpty && !placing) {
       return Scaffold(
         appBar: header,
         body: ListView(children: [
@@ -123,7 +177,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
 
     final errors = _showErrors ? _errors : const <String, String>{};
-    final total = cart.subtotal + cart.deliveryFee;
+    final preview = _preview;
+    // Until the server has calculated the totals, the cart's numbers are shown as an estimate.
+    final lines = preview?.items ??
+        [for (final i in cart.items) OrderItem(productId: i.productId, name: i.name, imageUrl: i.imageUrl, unitPrice: i.unitPrice, quantity: i.quantity, lineTotal: i.lineTotal)];
+    final subtotal = preview?.subtotal ?? cart.subtotal;
+    final deliveryFee = preview?.deliveryFee ?? standardDeliveryFeeUsd;
+    final total = preview?.total ?? subtotal + deliveryFee;
 
     return Scaffold(
       appBar: header,
@@ -135,9 +195,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           children: [
             if (_placeError != null) ...[
               AlertBanner(message: _placeError!, tone: AlertTone.error),
+              if (_cartProblem) Align(alignment: Alignment.centerLeft, child: TextButton(onPressed: () => context.go('/cart'), child: const Text('Review cart'))),
               const SizedBox(height: AppSpacing.lg),
             ],
-            _SectionTitle('Delivery address', action: _editing ? 'Done' : 'Edit', onAction: () => setState(() => _editing = !_editing)),
+            _SectionTitle('Delivery address', action: _editing ? 'Done' : 'Edit', onAction: _toggleEditing),
             DeliveryDetails(
               editing: _editing,
               onEdit: () => setState(() => _editing = true),
@@ -161,7 +222,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             AppCard(
               child: Column(
                 children: [
-                  for (final item in cart.items)
+                  if (_previewing) const Padding(padding: EdgeInsets.only(bottom: AppSpacing.md), child: LinearProgressIndicator(minHeight: 2)),
+                  for (final item in lines)
                     Padding(
                       padding: const EdgeInsets.only(bottom: AppSpacing.md),
                       child: Row(
@@ -185,8 +247,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   const SizedBox(height: AppSpacing.xs),
                   PriceSummary(
                     rows: [
-                      ('Subtotal', formatMoney(cart.subtotal)),
-                      ('Standard delivery · 2–4 days', formatMoney(cart.deliveryFee)),
+                      ('Subtotal', formatMoney(subtotal)),
+                      ('Standard delivery · 2–4 days', formatMoney(deliveryFee)),
                     ],
                     total: total,
                   ),
@@ -194,12 +256,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            const Row(
+            Row(
               children: [
-                SizedBox(width: AppSpacing.xs),
-                Icon(Icons.info_outline_rounded, size: 16, color: AppColors.textMuted),
-                SizedBox(width: AppSpacing.sm),
-                Expanded(child: Text('Prices and totals are checked again when your order is placed.', style: AppText.meta)),
+                const SizedBox(width: AppSpacing.xs),
+                const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.textMuted),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    preview != null ? 'Totals calculated by APM for your current cart.' : 'Estimated totals. They are calculated once your delivery details are complete.',
+                    style: AppText.meta,
+                  ),
+                ),
               ],
             ),
           ],

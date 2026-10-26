@@ -12,6 +12,7 @@ import '../../widgets/feedback/loading_skeleton.dart';
 import '../../widgets/inputs/category_chip.dart';
 import '../../widgets/inputs/search_bar.dart';
 import '../../widgets/layout/app_header.dart';
+import '../../utils/on_screen.dart';
 import 'widgets/filter_sheet.dart';
 
 /// SCR-008/009/011/012 Categories: search, category chips, sort, and the filter bottom sheet.
@@ -39,7 +40,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     _search = TextEditingController(text: context.read<ProductProvider>().filter.query);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<ProductProvider>().showCategory(widget.category);
+      final products = context.read<ProductProvider>();
+      products.ensureCategories();
+      products.showCategory(widget.category);
       _handleRouteRequests(widget.focusSearch, widget.openFilters);
     });
   }
@@ -93,6 +96,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   @override
   Widget build(BuildContext context) {
     final products = context.watch<ProductProvider>();
+    loadWhenOnScreen(context, products.ensureResults); // re-runs the search after a sign-in or sign-out
     final filter = products.filter;
     final category = products.categoryBySlug(widget.category);
     final shown = products.results;
@@ -191,7 +195,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                 title: 'Couldn’t load products',
                 message: products.resultsError!,
                 actionLabel: 'Try again',
-                onAction: products.categories.isEmpty ? products.load : products.refreshResults,
+                onAction: products.refreshResults,
               )
             else if (shown.isEmpty)
               EmptyState(

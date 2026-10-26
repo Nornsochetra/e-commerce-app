@@ -13,6 +13,7 @@ import '../../widgets/feedback/app_toast.dart';
 import '../../widgets/feedback/empty_state.dart';
 import '../../widgets/feedback/loading_skeleton.dart';
 import '../../widgets/layout/app_header.dart';
+import '../../utils/on_screen.dart';
 
 /// SCR-014 Wishlist: saved products from the server (newest first), remove with Undo, add one or all
 /// in-stock items to the cart.
@@ -22,10 +23,10 @@ class WishlistScreen extends StatelessWidget {
 
   Future<void> _remove(BuildContext context, Product p) async {
     final wishlist = context.read<WishlistProvider>();
-    final removed = await wishlist.remove(p.id);
+    final error = await wishlist.unsave(p.id);
     if (!context.mounted) return;
-    if (removed == null) return showAppToast(context, 'Couldn’t remove ${p.name}. Please try again.');
-    showAppToast(context, 'Removed from wishlist', actionLabel: 'Undo', onAction: () => wishlist.save(removed.id, optimistic: removed));
+    if (error != null) return showAppToast(context, error);
+    showAppToast(context, 'Removed from wishlist', actionLabel: 'Undo', onAction: () => wishlist.save(p.id));
   }
 
   Future<void> _addAll(BuildContext context, List<Product> products) async {
@@ -46,52 +47,65 @@ class WishlistScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final wishlist = context.watch<WishlistProvider>();
-    final saved = wishlist.items; // newest first, from the server
+    loadWhenOnScreen(context, wishlist.ensureLoaded); // loads when the tab is opened
+    final saved = wishlist.items; // newest first, one page at a time
     final inStock = saved.where((p) => p.inStock).toList();
-    final loading = wishlist.isLoading && saved.isEmpty;
+    final loading = (wishlist.isLoading || !wishlist.isLoaded) && saved.isEmpty;
 
     return Scaffold(
-      appBar: AppHeader(title: 'Wishlist', subtitle: saved.isEmpty ? null : '${saved.length} saved', showBack: false),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(AppSpacing.page, AppSpacing.xs, AppSpacing.page, MediaQuery.paddingOf(context).bottom + AppSpacing.xxl),
-        children: [
-          if (loading)
-            const ListSkeleton()
-          else if (wishlist.error != null && saved.isEmpty)
-            EmptyState(icon: Icons.wifi_off_rounded, title: 'Couldn’t load your wishlist', message: wishlist.error!, actionLabel: 'Try again', onAction: wishlist.load)
-          else if (saved.isEmpty)
-            EmptyState(
-              icon: Icons.favorite_border_rounded,
-              danger: true,
-              title: 'Nothing saved yet',
-              message: 'Tap the heart on any product to keep it here for later.',
-              actionLabel: 'Discover products',
-              onAction: () => context.go('/categories'),
-            )
-          else ...[
-            for (final p in saved)
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                child: ProductListCard(
-                  key: ValueKey(p.id),
-                  product: p,
-                  isFavorite: true,
-                  onTap: () => context.push('/product/${p.id}'),
-                  onFavorite: () => _remove(context, p),
-                  onAdd: () => addToCartWithToast(context, p),
+      appBar: AppHeader(title: 'Wishlist', subtitle: wishlist.total == 0 ? null : '${wishlist.total} saved', showBack: false),
+      // Loads older saved products when the list is scrolled close to its end.
+      body: NotificationListener<ScrollNotification>(
+        onNotification: (n) {
+          if (n.metrics.axis == Axis.vertical && n.metrics.extentAfter < 600) wishlist.loadMore();
+          return false;
+        },
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(AppSpacing.page, AppSpacing.xs, AppSpacing.page, MediaQuery.paddingOf(context).bottom + AppSpacing.xxl),
+          children: [
+            if (loading)
+              const ListSkeleton()
+            else if (wishlist.error != null && saved.isEmpty)
+              EmptyState(icon: Icons.wifi_off_rounded, title: 'Couldn’t load your wishlist', message: wishlist.error!, actionLabel: 'Try again', onAction: wishlist.load)
+            else if (saved.isEmpty)
+              EmptyState(
+                icon: Icons.favorite_border_rounded,
+                danger: true,
+                title: 'Nothing saved yet',
+                message: 'Tap the heart on any product to keep it here for later.',
+                actionLabel: 'Discover products',
+                onAction: () => context.go('/categories'),
+              )
+            else ...[
+              for (final p in saved)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: ProductListCard(
+                    key: ValueKey(p.id),
+                    product: p,
+                    isFavorite: true,
+                    onTap: () => context.push('/product/${p.id}'),
+                    onFavorite: () => _remove(context, p),
+                    onAdd: () => addToCartWithToast(context, p),
+                  ),
                 ),
-              ),
-            if (inStock.length > 1) ...[
-              const SizedBox(height: AppSpacing.sm),
-              AppButton(
-                label: 'Add all in stock to cart (${inStock.length})',
-                icon: Icons.add_shopping_cart_rounded,
-                variant: AppButtonVariant.secondary,
-                onPressed: () => _addAll(context, inStock),
-              ),
+              if (inStock.length > 1) ...[
+                const SizedBox(height: AppSpacing.sm),
+                AppButton(
+                  label: 'Add all in stock to cart (${inStock.length})',
+                  icon: Icons.add_shopping_cart_rounded,
+                  variant: AppButtonVariant.secondary,
+                  onPressed: () => _addAll(context, inStock),
+                ),
+              ],
             ],
+            if (wishlist.isLoadingMore)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                child: Center(child: SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2.5))),
+              ),
           ],
-        ],
+        ),
       ),
     );
   }

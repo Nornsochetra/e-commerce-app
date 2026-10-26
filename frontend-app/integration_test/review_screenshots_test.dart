@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_app/main.dart';
 import 'package:frontend_app/providers/auth/auth_provider.dart';
+import 'package:frontend_app/services/api/api_client.dart';
 import 'package:frontend_app/services/api/token_storage.dart';
+import 'package:frontend_app/services/auth/dev_account.dart';
+import 'package:frontend_app/services/cart/cart_service.dart';
+import 'package:frontend_app/services/wishlist/wishlist_service.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Walks through the finished screens on a real simulator and saves screenshots for review.
-/// Sign-in uses the real API, so start the backend first (see CLAUDE.md).
+/// Everything uses the real API, so start the backend first (see CLAUDE.md). The cart and wishlist
+/// runs first put sample items on the dev account (prepareDevAccount).
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -21,6 +26,28 @@ void main() {
   Future<void> freshStart() async {
     await (await SharedPreferences.getInstance()).clear();
     await SecureTokenStorage().clear();
+  }
+
+  /// Puts the sample cart (1 Minimal Watch + 2 Canvas Backpacks) and wishlist (Cloud Sneakers,
+  /// Classic Sunglasses) on the dev account, so the cart and wishlist screenshots have something to show.
+  /// Uses the dev catalog seed's product ids (backend/src/main/resources/db/dev/R__dev_seed_catalog.sql).
+  Future<void> prepareDevAccount() async {
+    const watch = '11111111-1111-4111-8111-111111111111';
+    const sneakers = '22222222-2222-4222-8222-222222222222';
+    const backpack = '33333333-3333-4333-8333-333333333333';
+    const sunglasses = '55555555-5555-4555-8555-555555555555';
+    final api = ApiClient(tokens: MemoryTokenStorage());
+    final login = await api.post('/auth/login', body: {'email': devAccountEmail, 'password': devAccountPassword}, auth: false);
+    await api.tokens.save(TokenPair.fromJson(login as Map<String, dynamic>));
+    final carts = CartService(api);
+    for (final line in (await carts.getCart()).items) {
+      await carts.removeItem(line.id);
+    }
+    await carts.addItem(watch, 1);
+    await carts.addItem(backpack, 2);
+    final wishlist = WishlistService(api);
+    await wishlist.save(sneakers);
+    await wishlist.save(sunglasses);
   }
 
   Future<void> tap(WidgetTester tester, Finder finder) async {
@@ -117,6 +144,7 @@ void main() {
 
   testWidgets('slice 4: cart, checkout, confirmation and orders', (tester) async {
     await freshStart();
+    await prepareDevAccount();
     await tester.pumpWidget(ApmApp(authProvider: AuthProvider()));
     await wait(tester, 3300);
     await tap(tester, find.text('Fill in'));
@@ -155,6 +183,7 @@ void main() {
 
   testWidgets('slice 5: wishlist, notifications and profile', (tester) async {
     await freshStart();
+    await prepareDevAccount();
     await tester.pumpWidget(ApmApp(authProvider: AuthProvider()));
     await wait(tester, 3300);
     await tap(tester, find.text('Fill in'));

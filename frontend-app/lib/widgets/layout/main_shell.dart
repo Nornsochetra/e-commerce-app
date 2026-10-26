@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/cart/cart_provider.dart';
+import '../../providers/user/user_provider.dart';
 import 'bottom_nav_bar.dart';
 
 /// Frame for the five tab screens (Home, Categories, Wishlist, Cart, Profile):
@@ -13,7 +14,9 @@ class MainShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cartCount = context.watch<CartProvider>().itemCount;
+    final cart = context.watch<CartProvider>();
+    // Until a screen loads the cart, the count from GET /auth/me is shown (no cart request at sign-in).
+    final cartCount = cart.isLoaded ? cart.itemCount : context.watch<UserProvider>().counts.cartItems;
     return Scaffold(
       extendBody: true, // screens scroll under the floating bar; they add bottom padding for it
       body: navigationShell,

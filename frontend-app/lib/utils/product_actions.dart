@@ -39,7 +39,7 @@ Future<void> addToCartWithToast(BuildContext context, Product product, {int quan
 Future<void> toggleWishlistWithToast(BuildContext context, Product product) async {
   if (!_requireSignIn(context)) return;
   final wishlist = context.read<WishlistProvider>();
-  final wasSaved = wishlist.contains(product.id);
+  final wasSaved = wishlist.isSaved(product);
   final error = await wishlist.toggle(product);
   if (context.mounted) showAppToast(context, error ?? (wasSaved ? 'Removed from wishlist' : 'Saved to wishlist'));
 }

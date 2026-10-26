@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_app/models/common/page_result.dart';
+import 'package:frontend_app/models/order/checkout.dart';
 import 'package:frontend_app/models/product/product_filter.dart';
 import 'package:frontend_app/services/api/api_client.dart';
 import 'package:frontend_app/services/api/api_exception.dart';
@@ -8,6 +9,8 @@ import 'package:frontend_app/services/auth/auth_service.dart';
 import 'package:frontend_app/services/auth/dev_account.dart';
 import 'package:frontend_app/services/cart/cart_service.dart';
 import 'package:frontend_app/services/health/health_service.dart';
+import 'package:frontend_app/services/notification/notification_service.dart';
+import 'package:frontend_app/services/order/order_service.dart';
 import 'package:frontend_app/services/product/product_service.dart';
 import 'package:frontend_app/services/user/user_service.dart';
 import 'package:frontend_app/services/wishlist/wishlist_service.dart';
@@ -123,7 +126,7 @@ void main() {
     // Wishlist: use a product that isn't saved yet.
     final saved = (await wishlists.getPage(0)).items.map((p) => p.id).toSet();
     final w = products.firstWhere((p) => !saved.contains(p.id));
-    expect((await wishlists.save(w.id)).id, w.id);
+    expect((await wishlists.save(w.id)).$1.id, w.id);
     await wishlists.save(w.id); // saving twice is harmless
     final page = await wishlists.getPage(0);
     expect(page.items.first.id, w.id); // newest first
@@ -132,6 +135,58 @@ void main() {
     await expectLater(wishlists.remove(w.id), throwsA(isA<ApiException>().having((e) => e.code, 'code', 'WISHLIST_ITEM_NOT_FOUND')));
     expect((await wishlists.getPage(0)).items.map((p) => p.id).toSet(), saved); // back to how it was
   }, skip: !_live);
+
+  test('slice E services (read-only): checkout preview, order history and details, inbox and unread count', () async {
+    final client = ApiClient(tokens: MemoryTokenStorage());
+    final login = await client.post('/auth/login', body: {'email': _devEmail, 'password': _devPassword}, auth: false) as Map<String, dynamic>;
+    await client.tokens.save(TokenPair.fromJson(login));
+    final orders = OrderService(client);
+    final inbox = NotificationService(client);
+    const delivery = Delivery(recipientName: 'Local User', email: _devEmail, address: '12 Riverside Street, Phnom Penh');
+
+    // Preview: totals from the server, or CART_EMPTY when the cart is empty. Nothing is created.
+    final cart = await CartService(client).getCart();
+    if (cart.items.isEmpty) {
+      await expectLater(orders.preview(delivery), throwsA(isA<ApiException>().having((e) => e.code, 'code', 'CART_EMPTY')));
+    } else {
+      final preview = await orders.preview(delivery);
+      expect(preview.subtotal, cart.subtotal);
+      expect(preview.total, preview.subtotal + preview.deliveryFee);
+    }
+
+    final history = await orders.getOrders();
+    if (history.items.isNotEmpty) {
+      final detail = await orders.getOrder(history.items.first.id);
+      expect(detail.reference, history.items.first.reference);
+      expect(detail.itemCount, history.items.first.itemCount);
+    }
+    await expectLater(orders.getOrder('00000000-0000-4000-8000-000000000000'), throwsA(isA<ApiException>().having((e) => e.code, 'code', 'ORDER_NOT_FOUND')));
+
+    final page = await inbox.getPage(size: 100);
+    final unread = await inbox.getUnreadCount();
+    if (!page.hasNext) expect(unread, page.items.where((n) => !n.isRead).length);
+  }, skip: !_live);
+
+  test('slice E place order (creates a real order: run with --dart-define=LIVE_ORDER=true)', () async {
+    final client = ApiClient(tokens: MemoryTokenStorage());
+    final login = await client.post('/auth/login', body: {'email': _devEmail, 'password': _devPassword}, auth: false) as Map<String, dynamic>;
+    await client.tokens.save(TokenPair.fromJson(login));
+    final carts = CartService(client);
+    final orders = OrderService(client);
+    const delivery = Delivery(recipientName: 'Local User', email: _devEmail, address: '12 Riverside Street, Phnom Penh');
+
+    final product = (await ProductService(client).getProducts(inStockOnly: true)).items.first;
+    await carts.addItem(product.id, 1);
+    final key = 'live-${DateTime.now().microsecondsSinceEpoch}';
+    final order = await orders.place(delivery, idempotencyKey: key);
+    expect(order.reference, startsWith('MC-'));
+    expect((await orders.place(delivery, idempotencyKey: key)).id, order.id); // a retry is not a second order
+    const changed = Delivery(recipientName: 'Local User', email: _devEmail, address: '99 Other Road, Siem Reap');
+    await expectLater(orders.place(changed, idempotencyKey: key), throwsA(isA<ApiException>().having((e) => e.code, 'code', 'CONFLICT')));
+    expect((await carts.getCart()).items.where((i) => i.productId == product.id), isEmpty); // ordered items left the cart
+    final latest = (await NotificationService(client).getPage()).items.first;
+    expect(latest.message, contains(order.reference));
+  }, skip: !(_live && const bool.fromEnvironment('LIVE_ORDER')));
 
   test('slice B services: sign in, load and edit the profile (then restore it), log out everywhere', () async {
     SharedPreferences.setMockInitialValues({});

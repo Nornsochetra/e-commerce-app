@@ -3,21 +3,18 @@ import 'package:flutter/material.dart';
 import '../../../models/order/order.dart';
 import '../../../theme.dart';
 import '../../../utils/formatters.dart';
-import '../../../widgets/cards/product_image.dart';
 import '../../../widgets/feedback/order_status_badge.dart';
 
-/// Order history card: reference, date, item count, status, overlapping photos and total.
+/// Order history card: reference, date, item count, status and total.
+/// Order history from the API has no item lines, so a parcel icon stands in for product photos.
 class OrderCard extends StatelessWidget {
-  final Order order;
+  final OrderSummary order;
   final VoidCallback onTap;
   const OrderCard({super.key, required this.order, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final n = order.itemCount;
-    final photos = order.items.take(3).toList();
-    final extra = order.items.length - photos.length;
-
     return Semantics(
       button: true,
       label: 'Order ${order.reference}, ${formatLabel(order.status.name)}, ${formatMoney(order.total)}',
@@ -41,7 +38,7 @@ class OrderCard extends StatelessWidget {
                         children: [
                           Text('Order #${order.reference}', style: AppText.head),
                           const SizedBox(height: 2),
-                          Text('${formatDate(order.createdAt)} · $n ${n == 1 ? 'item' : 'items'}', style: AppText.meta),
+                          Text(formatDate(order.createdAt), style: AppText.meta),
                         ],
                       ),
                     ),
@@ -51,19 +48,14 @@ class OrderCard extends StatelessWidget {
                 const SizedBox(height: AppSpacing.lg),
                 Row(
                   children: [
-                    for (final (i, item) in photos.indexed)
-                      Transform.translate(offset: Offset(-10.0 * i, 0), child: _Thumb(child: ProductImage(url: item.imageUrl))),
-                    if (extra > 0)
-                      Transform.translate(
-                        offset: Offset(-10.0 * photos.length, 0),
-                        child: _Thumb(
-                          child: Container(
-                            color: AppColors.field,
-                            alignment: Alignment.center,
-                            child: Text('+$extra', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF475569))),
-                          ),
-                        ),
-                      ),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(color: AppColors.mintSoft, borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+                      child: const Icon(Icons.inventory_2_outlined, size: 20, color: AppColors.primaryDark),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Text('$n ${n == 1 ? 'item' : 'items'}', style: AppText.bodyMuted),
                     const Spacer(),
                     Text(formatMoney(order.total), style: AppText.price),
                     const SizedBox(width: 6),
@@ -77,17 +69,4 @@ class OrderCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _Thumb extends StatelessWidget {
-  final Widget child;
-  const _Thumb({required this.child});
-
-  @override
-  Widget build(BuildContext context) => Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppSpacing.radiusSm), border: Border.all(color: Colors.white, width: 2)),
-        child: ClipRRect(borderRadius: BorderRadius.circular(AppSpacing.radiusSm - 2), child: child),
-      );
 }

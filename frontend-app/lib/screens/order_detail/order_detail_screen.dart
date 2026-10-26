@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/order/order_item.dart';
 import '../../providers/order/order_provider.dart';
+import '../../providers/product/product_provider.dart';
 import '../../theme.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/cards/app_card.dart';
@@ -14,24 +16,62 @@ import '../../widgets/feedback/order_status_badge.dart';
 import '../../widgets/layout/app_header.dart';
 import 'widgets/order_status_timeline.dart';
 
-/// SCR-018 Order details: status timeline, items, delivery and payment summary.
-class OrderDetailScreen extends StatelessWidget {
+/// SCR-018 Order details (GET /orders/{id}): status timeline, items, delivery and payment summary.
+class OrderDetailScreen extends StatefulWidget {
   final String orderId;
   const OrderDetailScreen({super.key, required this.orderId});
 
   @override
+  State<OrderDetailScreen> createState() => _OrderDetailScreenState();
+}
+
+class _OrderDetailScreenState extends State<OrderDetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Always read the latest status from the server, even when the order is already known.
+    WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? context.read<OrderProvider>().loadOrder(widget.orderId) : null);
+  }
+
+  @override
+  void didUpdateWidget(OrderDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.orderId != oldWidget.orderId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? context.read<OrderProvider>().loadOrder(widget.orderId) : null);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final orders = context.watch<OrderProvider>();
+    final products = context.watch<ProductProvider>();
+    final orderId = widget.orderId;
     final o = orders.orderById(orderId);
+    // Order lines from the API have no image, so the catalog photo is used.
+    String imageOf(OrderItem item) => item.imageUrl.isNotEmpty ? item.imageUrl : (products.productById(item.productId)?.imageUrl ?? '');
+    // Order lines have no photo: read each product once (skipped when it is already known).
+    if (o != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        for (final item in o.items) {
+          final id = item.productId;
+          if (imageOf(item).isEmpty && !products.isLoadingProduct(id) && !products.isMissing(id) && products.productError(id) == null) products.loadProduct(id);
+        }
+      });
+    }
 
-    if (o == null) {
+    if (o == null || orders.isMissing(orderId)) {
+      final error = orders.orderError(orderId);
       return Scaffold(
         appBar: const AppHeader(title: 'Order', backFallback: '/orders'),
-        body: orders.isLoading
-            ? const Padding(padding: EdgeInsets.all(AppSpacing.page), child: ListSkeleton(count: 2))
-            : ListView(children: [
+        body: orders.isMissing(orderId)
+            ? ListView(children: [
                 EmptyState(icon: Icons.inventory_2_outlined, title: 'Order not found', message: 'We couldn’t find that order.', actionLabel: 'Back to my orders', onAction: () => context.go('/orders')),
-              ]),
+              ])
+            : error != null
+                ? ListView(children: [
+                    EmptyState(icon: Icons.wifi_off_rounded, title: 'Couldn’t load this order', message: error, actionLabel: 'Try again', onAction: () => orders.loadOrder(orderId)),
+                  ])
+                : const Padding(padding: EdgeInsets.all(AppSpacing.page), child: ListSkeleton(count: 2)),
       );
     }
 
@@ -70,7 +110,7 @@ class OrderDetailScreen extends StatelessWidget {
                           excludeSemantics: true,
                           child: GestureDetector(
                             onTap: () => context.push('/product/${item.productId}'),
-                            child: SizedBox.square(dimension: 56, child: ClipRRect(borderRadius: BorderRadius.circular(AppSpacing.radiusSm), child: ProductImage(url: item.imageUrl))),
+                            child: SizedBox.square(dimension: 56, child: ClipRRect(borderRadius: BorderRadius.circular(AppSpacing.radiusSm), child: ProductImage(url: imageOf(item)))),
                           ),
                         ),
                         const SizedBox(width: AppSpacing.md),

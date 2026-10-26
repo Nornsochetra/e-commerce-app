@@ -1,9 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend_app/data/mock_data.dart';
+import 'package:frontend_app/providers/auth/auth_provider.dart';
 import 'package:frontend_app/providers/wishlist/wishlist_provider.dart';
 import 'package:frontend_app/services/api/api_client.dart';
 
 import '../fake_api.dart';
+import '../fake_catalog.dart';
 
 void main() {
   late FakeBackend backend;
@@ -16,43 +17,57 @@ void main() {
     backend = FakeBackend();
     ApiClient.instance = backend.client;
     await backend.signIn();
-    wishlist = WishlistProvider();
-    await wishlist.load();
+    wishlist = WishlistProvider()..syncWith(AuthStatus.signedIn);
   });
 
-  test('loads saved products from the server, newest first', () {
+  test('nothing loads until the Wishlist screen asks; then the first page, newest first', () async {
+    expect(backend.calls('GET', '/wishlist/items'), 0);
+    await wishlist.ensureLoaded();
     expect(wishlist.items.map((p) => p.name), ['Classic Sunglasses', 'Cloud Sneakers']);
-    expect(wishlist.contains(sneakers.id), isTrue);
-    expect(wishlist.count, 2);
+    expect(wishlist.total, 2);
+    expect(backend.adapter.requests.last.queryParameters['size'], 20);
+    await wishlist.ensureLoaded(); // already loaded
+    expect(backend.calls('GET', '/wishlist/items'), 1);
   });
 
-  test('toggle saves (newest first) and un-saves on the server', () async {
+  test('hearts come from the product’s saved flag; a heart tapped this session wins', () async {
+    expect(wishlist.isSaved(camera), isFalse); // camera.saved is false
     expect(await wishlist.toggle(camera), isNull);
+    expect(wishlist.isSaved(camera), isTrue);
+    expect(await wishlist.toggle(camera), isNull);
+    expect(wishlist.isSaved(camera), isFalse);
+    expect(backend.calls('GET', '/wishlist/items'), 0); // no wishlist download needed for hearts
+  });
+
+  test('save tells newly saved from already saved; unsave then Undo saves again', () async {
+    await wishlist.ensureLoaded();
+    final (error, isNew) = await wishlist.save(camera.id);
+    expect(error, isNull);
+    expect(isNew, isTrue);
     expect(wishlist.items.first.name, 'Everyday Camera');
-    expect(backend.calls('POST', '/wishlist/items'), 1);
+    expect(wishlist.total, 3);
+    expect((await wishlist.save(sneakers.id)).$2, isFalse); // already saved
+    expect(wishlist.total, 3);
 
-    expect(await wishlist.toggle(camera), isNull);
-    expect(wishlist.contains(camera.id), isFalse);
-
-    final reloaded = WishlistProvider();
-    await reloaded.load();
-    expect(reloaded.items.map((p) => p.name), ['Classic Sunglasses', 'Cloud Sneakers']);
-  });
-
-  test('remove returns the product so Undo can save it again', () async {
-    final removed = await wishlist.remove(sunglasses.id);
-    expect(removed?.name, 'Classic Sunglasses');
-    expect(wishlist.count, 1);
-    expect(await wishlist.save(removed!.id, optimistic: removed), isNull);
+    expect(await wishlist.unsave(sunglasses.id), isNull);
+    expect(wishlist.total, 2);
+    expect(wishlist.items.map((p) => p.name), isNot(contains('Classic Sunglasses')));
+    await wishlist.save(sunglasses.id); // Undo
     expect(wishlist.items.first.name, 'Classic Sunglasses');
   });
 
   test('when the server can’t be reached, the heart goes back and the reason is returned', () async {
     backend.offline = true;
-    final error = await wishlist.toggle(camera);
-    expect(error, contains('Can’t reach APM'));
-    expect(wishlist.contains(camera.id), isFalse);
-    expect(await wishlist.toggle(sneakers), contains('Can’t reach APM'));
-    expect(wishlist.contains(sneakers.id), isTrue); // un-saving was undone too
+    expect(await wishlist.toggle(camera), contains('Can’t reach APM'));
+    expect(wishlist.isSaved(camera), isFalse);
+  });
+
+  test('signing out forgets the wishlist and the tapped hearts', () async {
+    await wishlist.ensureLoaded();
+    await wishlist.toggle(camera);
+    wishlist.syncWith(AuthStatus.signedOut);
+    await Future<void>.delayed(Duration.zero);
+    expect(wishlist.items, isEmpty);
+    expect(wishlist.isSaved(camera), isFalse);
   });
 }

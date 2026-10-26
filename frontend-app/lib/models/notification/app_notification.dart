@@ -1,7 +1,7 @@
 /// Notification types in v1.
 enum NotificationType { order, offer, stock }
 
-/// An in-app notification.
+/// An in-app notification (`Notification`, docs/api-specification.md §4.11). [readAt] null = unread.
 class AppNotification {
   final String id;
   final NotificationType type;
@@ -25,13 +25,4 @@ class AppNotification {
         createdAt: DateTime.parse(json['createdAt'] as String),
         readAt: json['readAt'] == null ? null : DateTime.parse(json['readAt'] as String),
       );
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'type': type.name,
-        'title': title,
-        'message': message,
-        'createdAt': createdAt.toIso8601String(),
-        'readAt': readAt?.toIso8601String(),
-      };
 }

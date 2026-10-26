@@ -23,6 +23,7 @@ import '../../widgets/inputs/search_bar.dart';
 import '../../widgets/layout/app_header.dart';
 import '../../widgets/layout/brand_logo.dart';
 import '../../widgets/layout/section_header.dart';
+import '../../utils/on_screen.dart';
 import 'widgets/hero_banner.dart';
 
 /// SCR-007 Home: greeting, search entry, featured carousel, categories, order update,
@@ -40,6 +41,15 @@ class HomeScreen extends StatelessWidget {
     final user = context.watch<UserProvider>().user;
     final unread = context.watch<NotificationProvider>().unreadCount;
     final activeOrder = signedIn ? context.watch<OrderProvider>().activeOrder : null;
+
+    // Home loads only what it shows: the catalog sections, the active-order banner and the bell count.
+    loadWhenOnScreen(context, () {
+      products.ensureHome();
+      if (signedIn) {
+        context.read<OrderProvider>().ensureLoaded();
+        context.read<NotificationProvider>().ensureUnreadCount();
+      }
+    });
 
     final firstName = signedIn && user != null ? user.name.trim().split(' ').first : null;
     final greeting = _greeting(DateTime.now()) + (firstName == null ? '' : ', $firstName');
@@ -65,7 +75,11 @@ class HomeScreen extends StatelessWidget {
               ),
       ),
       body: RefreshIndicator(
-        onRefresh: products.load,
+        onRefresh: () => Future.wait([
+          products.loadHome(),
+          if (signedIn) context.read<OrderProvider>().load(),
+          if (signedIn) context.read<NotificationProvider>().loadUnreadCount(),
+        ]),
         child: ListView(
           padding: EdgeInsets.fromLTRB(AppSpacing.page, AppSpacing.xs, AppSpacing.page, MediaQuery.paddingOf(context).bottom + AppSpacing.xxl),
           children: [
@@ -106,7 +120,7 @@ class HomeScreen extends StatelessWidget {
             if (products.isLoading)
               const ProductGridSkeleton()
             else if (products.error != null)
-              EmptyState(icon: Icons.wifi_off_rounded, title: 'Couldn’t load products', message: 'Check your connection and try again.', actionLabel: 'Try again', onAction: products.load)
+              EmptyState(icon: Icons.wifi_off_rounded, title: 'Couldn’t load products', message: 'Check your connection and try again.', actionLabel: 'Try again', onAction: products.loadHome)
             else ...[
               ProductGrid(products: products.trending),
               const SectionHeader(title: 'New arrivals'),
@@ -115,7 +129,7 @@ class HomeScreen extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: AppSpacing.md),
                   child: ProductListCard(
                     product: p,
-                    isFavorite: wishlist.contains(p.id),
+                    isFavorite: wishlist.isSaved(p),
                     onTap: () => context.push('/product/${p.id}'),
                     onFavorite: () => toggleWishlistWithToast(context, p),
                     onAdd: () => addToCartWithToast(context, p),
@@ -131,7 +145,7 @@ class HomeScreen extends StatelessWidget {
 
 /// "Order #MC-19842 · On the way to you" banner for the newest order that isn't delivered yet.
 class _OrderUpdate extends StatelessWidget {
-  final Order order;
+  final OrderSummary order;
   const _OrderUpdate({required this.order});
 
   @override

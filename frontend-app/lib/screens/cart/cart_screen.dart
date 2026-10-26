@@ -15,6 +15,7 @@ import '../../widgets/feedback/empty_state.dart';
 import '../../widgets/feedback/loading_skeleton.dart';
 import '../../widgets/layout/action_dock.dart';
 import '../../widgets/layout/app_header.dart';
+import '../../utils/on_screen.dart';
 import 'widgets/cart_item_tile.dart';
 
 /// SCR-013 Shopping cart: change quantity, remove with Undo, save for later, order summary
@@ -36,17 +37,14 @@ class CartScreen extends StatelessWidget {
   Future<void> _saveForLater(BuildContext context, CartItem item) async {
     final cart = context.read<CartProvider>();
     final wishlist = context.read<WishlistProvider>();
-    final wasSaved = wishlist.contains(item.productId);
-    if (!wasSaved) {
-      final error = await wishlist.save(item.productId);
-      if (error != null) return context.mounted ? showAppToast(context, error) : null;
-    }
+    final (error, newlySaved) = await wishlist.save(item.productId);
+    if (error != null) return context.mounted ? showAppToast(context, error) : null;
     final removed = await cart.remove(item.productId);
     if (!context.mounted) return;
     if (removed == null) return showAppToast(context, cart.lastError ?? 'Couldn’t move that item. Please try again.');
     showAppToast(context, 'Moved to wishlist', actionLabel: 'Undo', onAction: () {
       cart.restore(removed);
-      if (!wasSaved) wishlist.remove(item.productId);
+      if (newlySaved) wishlist.unsave(item.productId);
     });
   }
 
@@ -62,10 +60,11 @@ class CartScreen extends StatelessWidget {
   Widget _buildScaffold(BuildContext context) {
     final cart = context.watch<CartProvider>();
     final hasItems = cart.items.isNotEmpty;
+    loadWhenOnScreen(context, cart.ensureLoaded); // the cart loads when the tab is opened
 
     return Scaffold(
       appBar: AppHeader(title: 'My Cart', subtitle: hasItems ? _items(cart.itemCount) : null, showBack: false),
-      body: cart.isLoading && !hasItems
+      body: (cart.isLoading || !cart.isLoaded) && !hasItems
           ? const Padding(padding: EdgeInsets.all(AppSpacing.page), child: ListSkeleton(count: 2))
           : cart.error != null && !hasItems
           ? ListView(children: [

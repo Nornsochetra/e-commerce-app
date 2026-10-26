@@ -3,14 +3,13 @@ import '../../models/product/category.dart';
 import '../../models/product/product.dart';
 import '../../models/product/product_filter.dart';
 import '../api/api_client.dart';
+import '../api/api_config.dart';
 
 /// The catalog through the API: GET /categories (CAT-0101), GET /products (CAT-0102),
-/// GET /products/{id} (CAT-0601). Catalog reads are public, so no token is sent.
+/// GET /products/{id} (CAT-0601). Catalog reads are public; the token is sent when signed in, so
+/// each product says whether it is `saved` in the customer's wishlist.
 /// Failures throw ApiException (PRODUCT_NOT_FOUND for a missing product).
 class ProductService {
-  /// The largest page the API returns (docs/api-convention.md §7).
-  static const maxPageSize = 100;
-
   final ApiClient _api;
   ProductService([ApiClient? api]) : _api = api ?? ApiClient.instance;
 
@@ -22,13 +21,13 @@ class ProductService {
   /// One page of products. Search is a case-insensitive name match done by the server.
   Future<PageResult<Product>> getProducts({
     int page = 0,
-    int size = 20,
+    int size = ApiConfig.pageSize,
     ProductSort sort = ProductSort.featured,
     String? query,
     String? categoryId,
     bool inStockOnly = false,
   }) async {
-    final data = await _api.get('/products', auth: false, query: {
+    final data = await _api.get('/products', query: {
       'page': page,
       'size': size,
       'sort': _sortParam(sort),
@@ -40,7 +39,7 @@ class ProductService {
   }
 
   /// One product with its description and current stock.
-  Future<Product> getProduct(String id) async => Product.fromJson(await _api.get('/products/$id', auth: false) as Map<String, dynamic>);
+  Future<Product> getProduct(String id) async => Product.fromJson(await _api.get('/products/$id') as Map<String, dynamic>);
 
   /// The API's sort values (docs/api-specification.md §3.4).
   static String _sortParam(ProductSort sort) => switch (sort) {

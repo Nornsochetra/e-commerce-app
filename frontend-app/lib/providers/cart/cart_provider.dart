@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../../data/mock_data.dart' show deliveryFeeUsd;
+import '../../models/order/checkout.dart' show standardDeliveryFeeUsd;
 import '../../models/cart/cart.dart';
 import '../../models/cart/cart_item.dart';
 import '../../models/product/product.dart';
@@ -12,7 +12,8 @@ import '../auth/follows_sign_in.dart';
 enum AddToCartResult { added, updated, maxReached, outOfStock, failed }
 
 /// The signed-in customer's cart, kept on the server. Every change shows the cart the server sends
-/// back, so totals and stock rules are always the server's. Follows sign-in (guests have no cart).
+/// back, so totals and stock rules are always the server's. Follows sign-in (guests have no cart);
+/// it loads when a screen that shows the cart opens ([ensureLoaded]).
 class CartProvider extends ChangeNotifier with FollowsSignIn {
   final _service = CartService();
 
@@ -27,7 +28,7 @@ class CartProvider extends ChangeNotifier with FollowsSignIn {
   double get subtotal => _cart.subtotal;
 
   /// Estimated standard delivery; the real fee is calculated at checkout.
-  double get deliveryFee => items.isEmpty ? 0 : deliveryFeeUsd;
+  double get deliveryFee => items.isEmpty ? 0 : standardDeliveryFeeUsd;
   double get total => subtotal + deliveryFee;
 
   int quantityOf(String productId) => _find(productId)?.quantity ?? 0;
@@ -106,6 +107,7 @@ class CartProvider extends ChangeNotifier with FollowsSignIn {
     notifyListeners();
     try {
       _cart = await request();
+      markLoaded(); // every change returns the whole cart
       return null;
     } on ApiException catch (e) {
       lastError = e.userMessage;
