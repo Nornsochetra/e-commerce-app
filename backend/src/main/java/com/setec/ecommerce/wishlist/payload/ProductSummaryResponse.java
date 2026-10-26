@@ -12,4 +12,5 @@ public record ProductSummaryResponse(
     String rating,
     String imageUrl,
     List<String> badges,
-    boolean featured) {}
+    boolean featured,
+    boolean saved) {}

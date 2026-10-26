@@ -3,20 +3,30 @@ package com.setec.ecommerce.catalog;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.setec.ecommerce.shared.domain.Category;
 import com.setec.ecommerce.shared.domain.Product;
+import com.setec.ecommerce.shared.domain.User;
 import com.setec.ecommerce.shared.enums.ProductBadgeType;
+import com.setec.ecommerce.shared.enums.Role;
 import com.setec.ecommerce.shared.repository.CategoryRepository;
 import com.setec.ecommerce.shared.repository.ProductRepository;
+import com.setec.ecommerce.shared.repository.UserRepository;
+import com.setec.ecommerce.shared.repository.WishlistItemRepository;
+import com.setec.ecommerce.shared.security.JwtTokenProvider;
+import com.setec.ecommerce.shared.security.TokenType;
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -27,9 +37,13 @@ class CatalogApiTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private CategoryRepository categoryRepository;
   @Autowired private ProductRepository productRepository;
+  @Autowired private UserRepository userRepository;
+  @Autowired private WishlistItemRepository wishlistItemRepository;
+  @Autowired private JwtTokenProvider tokenProvider;
 
   @BeforeEach
   void cleanDatabase() {
+    wishlistItemRepository.deleteAll();
     productRepository.deleteAll();
     categoryRepository.deleteAll();
   }
@@ -181,6 +195,64 @@ class CatalogApiTest {
           .andExpect(status().isNotFound())
           .andExpect(jsonPath("$.status.code").value("PRODUCT_NOT_FOUND"));
     }
+  }
+
+  @Test
+  void savedFlagFollowsTheSignedInCallersWishlist() throws Exception {
+    Category category = createCategory("Bags", "bags", true);
+    Product saved = createProduct(category, "Saved Bag", "50.00", 3, null, false, null, true);
+    createProduct(category, "Other Bag", "40.00", 3, null, false, null, true);
+    User owner = createUser();
+    User someoneElse = createUser();
+    mockMvc
+        .perform(
+            post("/api/v1/wishlist/items")
+                .header("Authorization", bearer(owner))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"productId\":\"" + saved.getUuid() + "\"}"))
+        .andExpect(status().isCreated());
+
+    mockMvc
+        .perform(get("/api/v1/products").param("sort", "name,asc"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.items[*].saved", contains(false, false)));
+    mockMvc
+        .perform(
+            get("/api/v1/products")
+                .param("sort", "name,asc")
+                .header("Authorization", bearer(owner)))
+        .andExpect(jsonPath("$.data.items[*].name", contains("Other Bag", "Saved Bag")))
+        .andExpect(jsonPath("$.data.items[*].saved", contains(false, true)));
+    mockMvc
+        .perform(get("/api/v1/products").header("Authorization", bearer(someoneElse)))
+        .andExpect(jsonPath("$.data.items[*].saved", contains(false, false)));
+    mockMvc
+        .perform(
+            get("/api/v1/products/{id}", saved.getUuid()).header("Authorization", bearer(owner)))
+        .andExpect(jsonPath("$.data.saved").value(true));
+    mockMvc
+        .perform(get("/api/v1/products/{id}", saved.getUuid()))
+        .andExpect(jsonPath("$.data.saved").value(false));
+  }
+
+  private User createUser() {
+    return userRepository.saveAndFlush(
+        User.builder()
+            .name("Catalog User")
+            .email("catalog-" + UUID.randomUUID() + "@example.com")
+            .passwordHash("unused-in-catalog-tests")
+            .role(Role.USER)
+            .active(true)
+            .build());
+  }
+
+  private String bearer(User user) {
+    return "Bearer "
+        + tokenProvider.generate(
+            user.getId().toString(),
+            TokenType.ACCESS,
+            List.of(user.getRole().name()),
+            user.getTokenVersion());
   }
 
   private Category createCategory(String name, String slug, boolean active) {

@@ -17,7 +17,7 @@ public class CatalogMapper {
     return new CategoryResponse(category.getUuid(), category.getName(), category.getSlug());
   }
 
-  public ProductSummaryResponse toSummaryResponse(Product product) {
+  public ProductSummaryResponse toSummaryResponse(Product product, boolean saved) {
     return new ProductSummaryResponse(
         product.getUuid(),
         product.getName(),
@@ -29,10 +29,11 @@ public class CatalogMapper {
         product.getBadges().stream()
             .map(badge -> badge.getBadge().name().toLowerCase(Locale.ROOT))
             .toList(),
-        product.isFeatured());
+        product.isFeatured(),
+        saved);
   }
 
-  public ProductDetailResponse toDetailResponse(Product product) {
+  public ProductDetailResponse toDetailResponse(Product product, boolean saved) {
     return new ProductDetailResponse(
         product.getUuid(),
         product.getName(),
@@ -45,7 +46,8 @@ public class CatalogMapper {
         product.getBadges().stream()
             .map(badge -> badge.getBadge().name().toLowerCase(Locale.ROOT))
             .toList(),
-        product.isFeatured());
+        product.isFeatured(),
+        saved);
   }
 
   private CategorySummaryResponse toCategorySummary(Category category) {

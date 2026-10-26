@@ -9,12 +9,16 @@ import com.setec.ecommerce.shared.api.StatusCode;
 import com.setec.ecommerce.shared.domain.Category;
 import com.setec.ecommerce.shared.domain.Product;
 import com.setec.ecommerce.shared.exception.BusinessException;
+import com.setec.ecommerce.shared.helper.AuthHelper;
 import com.setec.ecommerce.shared.repository.CategoryRepository;
 import com.setec.ecommerce.shared.repository.ProductRepository;
+import com.setec.ecommerce.shared.repository.WishlistItemRepository;
 import jakarta.persistence.criteria.Join;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,6 +34,8 @@ public class CatalogService {
   private final CategoryRepository categoryRepository;
   private final ProductRepository productRepository;
   private final CatalogMapper catalogMapper;
+  private final WishlistItemRepository wishlistItemRepository;
+  private final AuthHelper authHelper;
 
   @Transactional(readOnly = true)
   public List<CategoryResponse> listCategories() {
@@ -51,7 +57,10 @@ public class CatalogService {
     Page<Product> products =
         productRepository.findAll(
             specification, PageRequest.of(page, size, resolveSort(sortValue)));
-    return Pagination.of(products, catalogMapper::toSummaryResponse);
+    Set<Long> saved = savedByCaller(products.getContent().stream().map(Product::getId).toList());
+    return Pagination.of(
+        products,
+        product -> catalogMapper.toSummaryResponse(product, saved.contains(product.getId())));
   }
 
   @Transactional(readOnly = true)
@@ -60,7 +69,23 @@ public class CatalogService {
         productRepository
             .findVisibleByUuid(productId)
             .orElseThrow(() -> new BusinessException(StatusCode.PRODUCT_NOT_FOUND));
-    return catalogMapper.toDetailResponse(product);
+    return catalogMapper.toDetailResponse(
+        product, savedByCaller(List.of(product.getId())).contains(product.getId()));
+  }
+
+  /**
+   * Ids of [productIds] the signed-in caller has saved; empty for guests (catalog reads are
+   * public).
+   */
+  private Set<Long> savedByCaller(Collection<Long> productIds) {
+    if (productIds.isEmpty()) {
+      return Set.of();
+    }
+    return authHelper
+        .currentUserIdIfSignedIn()
+        .map(Long::valueOf)
+        .map(userId -> wishlistItemRepository.findSavedProductIds(userId, productIds))
+        .orElse(Set.of());
   }
 
   private Specification<Product> visibleProducts(

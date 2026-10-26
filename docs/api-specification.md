@@ -386,7 +386,8 @@ Returns `Pagination<ProductSummary>` with 200, or `VALIDATION_ERROR`, `CATEGORY_
         "rating": "4.8",
         "imageUrl": "https://cdn.example.com/products/minimal-watch.jpg",
         "badges": ["new", "premium_pick"],
-        "featured": true
+        "featured": true,
+        "saved": false
       }
     ],
     "page": 0,
@@ -399,7 +400,10 @@ Returns `Pagination<ProductSummary>` with 200, or `VALIDATION_ERROR`, `CATEGORY_
 }
 ```
 
-The list omits `description`; product details returns it as nullable. `inStock` is derived as
+The list omits `description`; product details returns it as nullable. `saved` is `true` when the
+signed-in caller has the product in their wishlist and always `false` for guests; catalog reads stay
+public, and the flag is filled only when a valid access token is sent. It lets clients draw wishlist
+hearts without downloading the whole wishlist. Wishlist responses carry `saved: true`. `inStock` is derived as
 `availableQuantity > 0`. `badges` is an empty array when no merchandising label applies. A client
 may choose the context-appropriate badge—for example `new` on a card and `premium_pick` in details.
 Featured sorting places featured products by

@@ -1,7 +1,9 @@
 package com.setec.ecommerce.shared.repository;
 
 import com.setec.ecommerce.shared.domain.WishlistItem;
+import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,4 +26,10 @@ public interface WishlistItemRepository extends JpaRepository<WishlistItem, Long
       @Param("userId") Long userId, @Param("productUuid") UUID productUuid);
 
   long countByUserId(Long userId);
+
+  @Query(
+      "select w.product.id from WishlistItem w "
+          + "where w.user.id = :userId and w.product.id in :productIds")
+  Set<Long> findSavedProductIds(
+      @Param("userId") Long userId, @Param("productIds") Collection<Long> productIds);
 }

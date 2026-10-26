@@ -23,7 +23,8 @@ public class WishlistMapper {
         product.getBadges().stream()
             .map(badge -> badge.getBadge().name().toLowerCase(Locale.ROOT))
             .toList(),
-        product.isFeatured());
+        product.isFeatured(),
+        true);
   }
 
   private String formatDecimal(BigDecimal value) {
