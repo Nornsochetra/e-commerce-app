@@ -51,8 +51,8 @@ Built in five slices; the user reviews each slice before the next starts, and co
 |---|---|---|
 | 1 | Foundation: theme, models, mock data, services, providers, router, shared widgets, placeholder screens | Done |
 | 2 | Splash, Sign in, Create account, Reset password | Done |
-| 3 | Home, Categories (search, filter, sort), Product details | Next |
-| 4 | Cart, Checkout, Order confirmed, My orders, Order details | To do |
+| 3 | Home, Categories (search, filter, sort), Product details | Done |
+| 4 | Cart, Checkout, Order confirmed, My orders, Order details | Next |
 | 5 | Wishlist, Notifications, Profile (edit sheet, log out) | To do |
 
 Screens not yet built in their slice are working placeholders (file header says `PLACEHOLDER (slice N)`) so every route can be clicked through.

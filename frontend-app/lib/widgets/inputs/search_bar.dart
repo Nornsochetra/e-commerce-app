@@ -10,6 +10,7 @@ class AppSearchBar extends StatelessWidget {
   final VoidCallback? onTap;
   final bool readOnly;
   final bool autofocus;
+  final FocusNode? focusNode;
   final String hint;
 
   const AppSearchBar({
@@ -20,6 +21,7 @@ class AppSearchBar extends StatelessWidget {
     this.onTap,
     this.readOnly = false,
     this.autofocus = false,
+    this.focusNode,
     this.hint = 'Search products',
   });
 
@@ -35,6 +37,7 @@ class AppSearchBar extends StatelessWidget {
         onTap: onTap,
         readOnly: readOnly,
         autofocus: autofocus,
+        focusNode: focusNode,
         textInputAction: TextInputAction.search,
         style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(

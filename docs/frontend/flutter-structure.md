@@ -35,7 +35,8 @@ frontend-app/
     ├── models/                        plain data classes
     │   ├── product/
     │   │   ├── product.dart
-    │   │   └── category.dart
+    │   │   ├── category.dart
+    │   │   └── product_filter.dart    search text, sort, in-stock-only (Categories)
     │   ├── cart/
     │   │   └── cart_item.dart
     │   ├── order/
@@ -106,6 +107,7 @@ frontend-app/
     │   │   ├── brand_logo.dart            Mercato logo mark + name
     │   │   ├── auth_layout.dart           frame for Sign in / Create account / Reset password
     │   │   ├── app_header.dart            back button + centred title + action
+    │   │   ├── section_header.dart        section title + optional "See all"
     │   │   ├── bottom_nav_bar.dart        floating tab bar with cart badge
     │   │   └── action_dock.dart           sticky bottom bar (Add to cart, Checkout, Place order)
     │   ├── buttons/
@@ -119,7 +121,9 @@ frontend-app/
     │   ├── cards/
     │   │   ├── product_image.dart         product photo (URL) with placeholder while loading
     │   │   ├── product_card.dart          grid card (image, Add, heart)
-    │   │   └── product_list_card.dart     horizontal card (wishlist, new arrivals)
+    │   │   ├── product_grid.dart          2-column grid of product cards with cart/wishlist actions
+    │   │   ├── product_list_card.dart     horizontal card (wishlist, new arrivals)
+    │   │   └── link_banner.dart           tappable strip (order update, "already in your cart")
     │   └── feedback/
     │       ├── alert_banner.dart          inline success / error / info message
     │       ├── empty_state.dart

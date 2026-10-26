@@ -63,4 +63,47 @@ void main() {
     await wait(tester, 900);
     await binding.takeScreenshot('s2_08_forgot_sent');
   });
+
+  testWidgets('slice 3: home, categories and product details', (tester) async {
+    await (await SharedPreferences.getInstance()).clear();
+    await tester.pumpWidget(MercatoApp(authProvider: AuthProvider()));
+    await wait(tester, 3300);
+    await tap(tester, find.text('Fill in'));
+    await tap(tester, find.text('Sign in'));
+    await wait(tester, 2500); // product photos load from the network
+    await binding.takeScreenshot('s3_01_home');
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -520));
+    await wait(tester, 1500);
+    await binding.takeScreenshot('s3_02_home_trending');
+
+    await tap(tester, find.byTooltip('Filter products'));
+    await wait(tester, 2000);
+    await binding.takeScreenshot('s3_03_categories_filter_sheet');
+    await tap(tester, find.text('In stock only'));
+    await wait(tester, 300);
+    await tap(tester, find.textContaining('Show '));
+    await wait(tester, 800);
+    await binding.takeScreenshot('s3_04_categories_filtered');
+
+    await tester.enterText(find.byType(TextField), 'zzz');
+    await wait(tester, 400);
+    await binding.takeScreenshot('s3_05_no_results');
+    await tap(tester, find.text('Clear search & filters'));
+    await wait(tester, 800);
+
+    await tap(tester, find.bySemanticsLabel('View Minimal Watch'));
+    await wait(tester, 1500);
+    await binding.takeScreenshot('s3_06_product');
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
+    await wait(tester, 1000);
+    await binding.takeScreenshot('s3_07_product_more');
+
+    await tap(tester, find.byTooltip('Back'));
+    await wait(tester, 800);
+    await tap(tester, find.textContaining('Electronics'));
+    await wait(tester, 800);
+    await tap(tester, find.bySemanticsLabel('View Studio Headphones'));
+    await wait(tester, 1500);
+    await binding.takeScreenshot('s3_08_product_sold_out');
+  });
 }

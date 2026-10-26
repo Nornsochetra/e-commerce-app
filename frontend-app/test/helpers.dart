@@ -33,3 +33,19 @@ Future<void> startAppAtLogin(WidgetTester tester) async {
   await tester.pumpWidget(MercatoApp(authProvider: AuthProvider()));
   await wait(tester, steps: 14);
 }
+
+/// Starts the app and continues as a guest (Home).
+Future<void> startAsGuest(WidgetTester tester) async {
+  await startAppAtLogin(tester);
+  await tapVisible(tester, find.text('Continue as guest'));
+  await wait(tester);
+}
+
+/// Starts the app and signs in with the demo account (Home).
+Future<void> startSignedIn(WidgetTester tester) async {
+  await startAppAtLogin(tester);
+  await tester.tap(find.text('Fill in'));
+  await tester.pump();
+  await tapVisible(tester, find.text('Sign in'));
+  await wait(tester);
+}

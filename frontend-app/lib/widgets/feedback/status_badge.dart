@@ -24,9 +24,9 @@ class StatusBadge extends StatelessWidget {
     return Container(
       height: 24,
       padding: const EdgeInsets.symmetric(horizontal: 10),
-      alignment: Alignment.center,
       decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(12)),
-      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: foreground)),
+      // widthFactor keeps the pill as wide as its text, even inside a Wrap or Column.
+      child: Center(widthFactor: 1, child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: foreground))),
     );
   }
 }

@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import '../../theme.dart';
 
 /// Opens a rounded bottom sheet with a title. The sheet moves up with the keyboard.
+/// It opens above the floating tab bar (root navigator), so its buttons are never hidden.
 /// Returns whatever the sheet passes to `Navigator.pop(context, value)`.
 Future<T?> showAppBottomSheet<T>(BuildContext context, {required String title, required Widget child}) {
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
+    useRootNavigator: true,
     useSafeArea: true,
     builder: (sheetContext) => Padding(
       padding: EdgeInsets.fromLTRB(
