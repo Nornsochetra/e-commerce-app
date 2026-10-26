@@ -83,7 +83,9 @@ public class SecurityConfig {
   @Bean
   CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(
+    // Patterns accept exact origins and wildcards such as http://localhost:* (any port), which the
+    // dev profile needs because `flutter run -d chrome` serves the app from a random port.
+    configuration.setAllowedOriginPatterns(
         Arrays.stream(allowedOrigins.split(","))
             .map(String::trim)
             .filter(s -> !s.isEmpty())
