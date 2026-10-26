@@ -1,9 +1,10 @@
 import 'package:flutter/foundation.dart';
 
+import '../auth/follows_sign_in.dart';
 import '../../services/wishlist/wishlist_service.dart';
 
 /// Saved products (stored as product ids; screens look the products up in ProductProvider).
-class WishlistProvider extends ChangeNotifier {
+class WishlistProvider extends ChangeNotifier with FollowsSignIn {
   final _service = WishlistService();
 
   List<String> productIds = [];
@@ -15,11 +16,19 @@ class WishlistProvider extends ChangeNotifier {
   List<String> get newestFirst => productIds.reversed.toList();
   bool contains(String productId) => productIds.contains(productId);
 
+  @override
   Future<void> load() async {
     isLoading = true;
     notifyListeners();
     productIds = await _service.getWishlistIds();
     isLoading = false;
+    notifyListeners();
+  }
+
+  /// Guests have no wishlist: hides the saved products (nothing is deleted).
+  @override
+  void unload() {
+    productIds = [];
     notifyListeners();
   }
 

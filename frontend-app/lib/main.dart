@@ -35,15 +35,13 @@ class _ApmAppState extends State<ApmApp> {
       providers: [
         ChangeNotifierProvider.value(value: widget.authProvider),
         ChangeNotifierProvider(create: (_) => ProductProvider()..load()),
-        ChangeNotifierProvider(create: (_) => CartProvider()..load()),
-        ChangeNotifierProvider(create: (_) => WishlistProvider()..load()),
-        ChangeNotifierProvider(create: (_) => OrderProvider()..load()),
-        ChangeNotifierProvider(create: (_) => NotificationProvider()..load()),
-        // The profile follows sign-in: loaded after signing in, cleared after signing out.
-        ChangeNotifierProxyProvider<AuthProvider, UserProvider>(
-          create: (_) => UserProvider(),
-          update: (_, auth, user) => user!..syncWith(auth.status),
-        ),
+        // The customer's own data follows sign-in: loaded after signing in, cleared for guests and
+        // after signing out (providers/auth/follows_sign_in.dart).
+        ChangeNotifierProxyProvider<AuthProvider, CartProvider>(create: (_) => CartProvider(), update: (_, auth, p) => p!..syncWith(auth.status)),
+        ChangeNotifierProxyProvider<AuthProvider, WishlistProvider>(create: (_) => WishlistProvider(), update: (_, auth, p) => p!..syncWith(auth.status)),
+        ChangeNotifierProxyProvider<AuthProvider, OrderProvider>(create: (_) => OrderProvider(), update: (_, auth, p) => p!..syncWith(auth.status)),
+        ChangeNotifierProxyProvider<AuthProvider, NotificationProvider>(create: (_) => NotificationProvider(), update: (_, auth, p) => p!..syncWith(auth.status)),
+        ChangeNotifierProxyProvider<AuthProvider, UserProvider>(create: (_) => UserProvider(), update: (_, auth, p) => p!..syncWith(auth.status)),
       ],
       child: MaterialApp.router(
         title: 'APM',

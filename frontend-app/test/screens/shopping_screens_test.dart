@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_app/widgets/buttons/app_button.dart';
 import 'package:frontend_app/widgets/inputs/category_chip.dart';
+import 'package:frontend_app/widgets/layout/bottom_nav_bar.dart';
 import 'package:frontend_app/widgets/inputs/search_bar.dart';
 
 import '../helpers.dart';
@@ -15,6 +17,8 @@ void main() {
     expect(find.text('Shop footwear'), findsOneWidget);
     expect(find.textContaining('Order #'), findsNothing);
     expect(find.text('Trending now'), findsOneWidget);
+    expect(find.byTooltip(RegExp('^Notifications')), findsNothing); // guests get Sign in instead of the bell
+    expect(find.widgetWithText(AppButton, 'Sign in'), findsOneWidget);
 
     await tapVisible(tester, find.widgetWithText(CategoryChip, 'Bags'));
     await wait(tester);
@@ -59,6 +63,28 @@ void main() {
     expect(find.text('Filter & sort'), findsNothing);
     expect(richText('5 products · in stock'), findsOneWidget);
     expect(find.byTooltip('Filter and sort, options on'), findsOneWidget);
+  });
+
+  testWidgets('guest Home: no cart badge or saved hearts; Sign in brings them back', (tester) async {
+    Finder cartBadge(String n) => find.descendant(of: find.byType(BottomNavBar), matching: find.text(n));
+    await startAsGuest(tester);
+    expect(cartBadge('3'), findsNothing); // the demo cart belongs to the account, not to guests
+    expect(find.byTooltip('Remove Cloud Sneakers from wishlist'), findsNothing);
+    expect(find.byTooltip('Save Cloud Sneakers to wishlist'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(AppButton, 'Sign in'));
+    await wait(tester);
+    expect(find.text('Welcome back'), findsOneWidget);
+    expect(find.text('Create an account'), findsOneWidget); // new users can sign up from here
+
+    await tester.tap(find.text('Fill in'));
+    await tester.pump();
+    await tapVisible(tester, find.widgetWithText(AppButton, 'Sign in'));
+    await wait(tester);
+    expect(find.text('Trending now'), findsOneWidget);
+    expect(find.byTooltip(RegExp('^Notifications')), findsOneWidget); // signed in: the bell is back
+    expect(cartBadge('3'), findsOneWidget);
+    expect(find.byTooltip('Remove Cloud Sneakers from wishlist'), findsOneWidget);
   });
 
   testWidgets('product details: stock, quantity and price; guests must sign in to add', (tester) async {

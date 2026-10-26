@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../auth/follows_sign_in.dart';
 import '../../data/mock_data.dart';
 import '../../models/cart/cart_item.dart';
 import '../../models/product/product.dart';
@@ -9,7 +10,7 @@ import '../../services/cart/cart_service.dart';
 enum AddToCartResult { added, updated, maxReached, outOfStock }
 
 /// The shopping cart: items, totals and the tab-bar badge count.
-class CartProvider extends ChangeNotifier {
+class CartProvider extends ChangeNotifier with FollowsSignIn {
   final _service = CartService();
 
   List<CartItem> items = [];
@@ -27,11 +28,19 @@ class CartProvider extends ChangeNotifier {
     return 0;
   }
 
+  @override
   Future<void> load() async {
     isLoading = true;
     notifyListeners();
     items = await _service.getCart();
     isLoading = false;
+    notifyListeners();
+  }
+
+  /// Guests have no cart: hides the items (the saved cart stays on the device).
+  @override
+  void unload() {
+    items = [];
     notifyListeners();
   }
 

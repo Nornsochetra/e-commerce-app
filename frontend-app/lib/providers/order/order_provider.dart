@@ -1,11 +1,12 @@
 import 'package:flutter/foundation.dart';
 
+import '../auth/follows_sign_in.dart';
 import '../../models/cart/cart_item.dart';
 import '../../models/order/order.dart';
 import '../../services/order/order_service.dart';
 
 /// Order history and placing new orders.
-class OrderProvider extends ChangeNotifier {
+class OrderProvider extends ChangeNotifier with FollowsSignIn {
   final _service = OrderService();
 
   List<Order> orders = [];
@@ -28,6 +29,7 @@ class OrderProvider extends ChangeNotifier {
     return null;
   }
 
+  @override
   Future<void> load() async {
     isLoading = true;
     error = null;
@@ -38,6 +40,13 @@ class OrderProvider extends ChangeNotifier {
       error = 'Could not load your orders';
     }
     isLoading = false;
+    notifyListeners();
+  }
+
+  /// Guests have no orders: hides them (nothing is deleted).
+  @override
+  void unload() {
+    orders = [];
     notifyListeners();
   }
 

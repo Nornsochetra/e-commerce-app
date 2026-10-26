@@ -8,7 +8,7 @@ import '../../../utils/validators.dart';
 import '../../../widgets/buttons/app_button.dart';
 import '../../../widgets/feedback/alert_banner.dart';
 import '../../../widgets/feedback/app_bottom_sheet.dart';
-import '../../../widgets/feedback/confirm_sheet.dart';
+import '../../../widgets/feedback/confirm_dialog.dart';
 import '../../../widgets/inputs/app_text_field.dart';
 
 /// Opens "Edit profile". Returns true when the profile was saved.
@@ -52,7 +52,7 @@ class _EditProfileFormState extends State<_EditProfileForm> {
 
   Future<void> _close() async {
     if (_dirty) {
-      final discard = await showConfirmSheet(
+      final discard = await showConfirmDialog(
         context,
         title: 'Discard changes?',
         message: 'Your edits to this profile haven’t been saved.',

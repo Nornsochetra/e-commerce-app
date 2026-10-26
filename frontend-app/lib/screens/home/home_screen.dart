@@ -11,6 +11,7 @@ import '../../providers/user/user_provider.dart';
 import '../../providers/wishlist/wishlist_provider.dart';
 import '../../theme.dart';
 import '../../utils/product_actions.dart';
+import '../../widgets/buttons/app_button.dart';
 import '../../widgets/buttons/circle_icon_button.dart';
 import '../../widgets/cards/link_banner.dart';
 import '../../widgets/cards/product_grid.dart';
@@ -46,12 +47,22 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppHeader(
         leading: const BrandLogo(),
-        trailing: CircleIconButton(
-          icon: Icons.notifications_none_rounded,
-          tooltip: signedIn && unread > 0 ? 'Notifications, $unread unread' : 'Notifications',
-          badgeCount: signedIn ? unread : 0,
-          onPressed: () => context.push('/notifications'),
-        ),
+        // Guests can't have notifications, so they get a way to sign in (which also links to Create account).
+        trailing: signedIn
+            ? CircleIconButton(
+                icon: Icons.notifications_none_rounded,
+                tooltip: unread > 0 ? 'Notifications, $unread unread' : 'Notifications',
+                badgeCount: unread,
+                onPressed: () => context.push('/notifications'),
+              )
+            : AppButton(
+                label: 'Sign in',
+                icon: Icons.person_outline_rounded,
+                variant: AppButtonVariant.secondary,
+                small: true,
+                expanded: false,
+                onPressed: () => context.push('/login?from=${Uri.encodeComponent('/home')}'),
+              ),
       ),
       body: RefreshIndicator(
         onRefresh: products.load,

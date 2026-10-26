@@ -15,7 +15,7 @@ import '../../widgets/buttons/app_button.dart';
 import '../../widgets/buttons/circle_icon_button.dart';
 import '../../widgets/cards/app_card.dart';
 import '../../widgets/feedback/app_toast.dart';
-import '../../widgets/feedback/confirm_sheet.dart';
+import '../../widgets/feedback/confirm_dialog.dart';
 import '../../widgets/feedback/loading_skeleton.dart';
 import '../../widgets/feedback/status_badge.dart';
 import '../../widgets/layout/app_header.dart';
@@ -34,7 +34,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Future<void> _logOut(BuildContext context) async {
-    final ok = await showConfirmSheet(
+    final ok = await showConfirmDialog(
       context,
       title: 'Log out of APM?',
       message: 'You’ll return to the sign-in screen. Your cart and wishlist stay saved on this device.',
@@ -49,7 +49,7 @@ class ProfileScreen extends StatelessWidget {
   /// Restores the sample cart, wishlist, orders and notifications that are still mock data on this device.
   /// Your account and profile live on the server and aren't touched.
   Future<void> _resetDemo(BuildContext context) async {
-    final ok = await showConfirmSheet(
+    final ok = await showConfirmDialog(
       context,
       title: 'Reset demo data?',
       message: 'This restores the original sample cart, wishlist, notifications and orders on this device. Your account isn’t changed.',

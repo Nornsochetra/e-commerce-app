@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
 
+import '../auth/follows_sign_in.dart';
 import '../../models/notification/app_notification.dart';
 import '../../services/notification/notification_service.dart';
 
 /// In-app notifications and the unread badge on the bell.
-class NotificationProvider extends ChangeNotifier {
+class NotificationProvider extends ChangeNotifier with FollowsSignIn {
   final _service = NotificationService();
 
   List<AppNotification> items = [];
@@ -12,11 +13,19 @@ class NotificationProvider extends ChangeNotifier {
 
   int get unreadCount => items.where((n) => !n.isRead).length;
 
+  @override
   Future<void> load() async {
     isLoading = true;
     notifyListeners();
     items = await _service.getNotifications();
     isLoading = false;
+    notifyListeners();
+  }
+
+  /// Guests have no notifications: hides them (nothing is deleted).
+  @override
+  void unload() {
+    items = [];
     notifyListeners();
   }
 
