@@ -47,15 +47,7 @@ function EditProfileSheet({ user, onClose, onSave }) {
     setTimeout(() => onSave({ name: draft.name.trim(), email: draft.email.trim().toLowerCase(), phone: draft.phone.trim() }), 600);
   };
 
-  if (confirmDiscard) return <BottomSheet title="Discard changes?" onClose={() => setConfirmDiscard(false)} role="alertdialog">
-    <p className="t-body muted mt-2">Your edits to this profile haven’t been saved.</p>
-    <div className="sheet-actions">
-      <button type="button" className="btn btn-outline" onClick={() => setConfirmDiscard(false)}>Keep editing</button>
-      <button type="button" className="btn btn-danger-solid" onClick={onClose}>Discard</button>
-    </div>
-  </BottomSheet>;
-
-  return <BottomSheet title="Edit profile" onClose={tryClose}>
+  return <><BottomSheet title="Edit profile" onClose={tryClose} paused={confirmDiscard}>
     <form className="flex flex-col gap-4 mt-5" onSubmit={submit} noValidate>
       <FieldShell id="pf-name" label="Full name" error={err('name')}><input className="input" autoComplete="name" maxLength={100} {...bind('name')} /></FieldShell>
       <FieldShell id="pf-email" label="Email" error={err('email')}><input className="input" type="email" inputMode="email" autoComplete="email" maxLength={255} {...bind('email')} /></FieldShell>
@@ -65,7 +57,10 @@ function EditProfileSheet({ user, onClose, onSave }) {
         <button className="btn btn-primary" disabled={saving || !dirty}>{saving ? <Spinner text="Saving…" /> : 'Save changes'}</button>
       </div>
     </form>
-  </BottomSheet>;
+  </BottomSheet>
+    {confirmDiscard && <ConfirmDialog title="Discard changes?" text="Your edits to this profile haven’t been saved."
+      cancelLabel="Keep editing" confirmLabel="Discard" danger onCancel={() => setConfirmDiscard(false)} onConfirm={onClose} />}
+  </>;
 }
 
 function ProfileMenuRow({ icon, tone, title, sub, href, badge, soon, onClick }) {
@@ -129,13 +124,10 @@ function ProfileScreen({ navigate }) {
     <p className="t-meta text-center mt-3">APM prototype · data stays in this browser</p>
 
     {editing && <EditProfileSheet user={user} onClose={() => setEditing(false)} onSave={save} />}
-    {dialog && <BottomSheet title={dialog === 'reset' ? 'Reset demo data?' : 'Log out of APM?'} onClose={() => setDialog(null)} role="alertdialog">
-      <p className="t-body muted mt-2">{dialog === 'reset' ? 'This restores the original sample cart, wishlist, notifications, orders and profile in this browser.' : 'You’ll return to the sign-in screen. Your cart and wishlist stay saved in this browser.'}</p>
-      <div className="sheet-actions">
-        <button className="btn btn-outline" onClick={() => setDialog(null)}>Cancel</button>
-        <button className={'btn ' + (dialog === 'reset' ? 'btn-primary' : 'btn-danger-solid')} onClick={dialog === 'reset' ? resetDemo : logOut}>{dialog === 'reset' ? 'Reset' : 'Log out'}</button>
-      </div>
-    </BottomSheet>}
+    {dialog === 'reset' && <ConfirmDialog title="Reset demo data?" text="This restores the original sample cart, wishlist, notifications, orders and profile in this browser."
+      confirmLabel="Reset" onCancel={() => setDialog(null)} onConfirm={resetDemo} />}
+    {dialog === 'logout' && <ConfirmDialog title="Log out of APM?" text="You’ll return to the sign-in screen. Your cart and wishlist stay saved in this browser."
+      confirmLabel="Log out" danger onCancel={() => setDialog(null)} onConfirm={logOut} />}
   </ScreenLayout>;
 }
 

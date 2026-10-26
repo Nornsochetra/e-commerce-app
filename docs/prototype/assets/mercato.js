@@ -334,15 +334,19 @@
 
   /* ---------- overlays & states ---------- */
   /** Modal bottom sheet with focus trap, Escape and backdrop dismissal. */
-  function BottomSheet({ title, children, onClose, labelledBy = 'sheet-title', role = 'dialog' }) {
-    const ref = React.useRef(null);
+  /** Shared modal behaviour: focus the first control, trap Tab, close on Escape, lock page scroll.
+   *  `paused` stops the keyboard handling while another modal is open on top (e.g. a confirm popup over a sheet). */
+  function useModal(ref, onClose, paused) {
     const closeRef = React.useRef(onClose);
     closeRef.current = onClose; // Escape must use the latest handler (e.g. dirty-form checks)
+    const pausedRef = React.useRef(paused);
+    pausedRef.current = paused;
     React.useEffect(() => {
       const prev = document.activeElement;
       const first = ref.current && ref.current.querySelector('input, select, textarea, button, a[href]');
       first && first.focus({ preventScroll: true });
       const onKey = e => {
+        if (pausedRef.current) return;
         if (e.key === 'Escape') closeRef.current();
         if (e.key === 'Tab' && ref.current) {
           const f = [...ref.current.querySelectorAll('button:not(:disabled), input, select, textarea, a[href]')];
@@ -356,10 +360,28 @@
       document.body.style.overflow = 'hidden';
       return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = ''; prev && prev.focus && prev.focus({ preventScroll: true }); };
     }, []);
-    return h('div', { className: 'overlay', onMouseDown: e => { if (e.target === e.currentTarget) onClose(); } },
-      h('div', { ref, className: 'sheet', role, 'aria-modal': 'true', 'aria-labelledby': labelledBy },
+  }
+  /** Bottom sheet for content and forms (filters, edit profile). */
+  function BottomSheet({ title, children, onClose, labelledBy = 'sheet-title', role = 'dialog', paused = false }) {
+    const ref = React.useRef(null);
+    useModal(ref, onClose, paused);
+    return h('div', { className: 'overlay', onMouseDown: e => { if (!paused && e.target === e.currentTarget) onClose(); } },
+      h('div', { ref, className: 'sheet', role, 'aria-modal': 'true', 'aria-labelledby': labelledBy, 'aria-hidden': paused ? 'true' : undefined },
         h('div', { className: 'grab', 'aria-hidden': 'true' }),
         title && h('h2', { id: labelledBy, className: 'sheet-title' }, title), children));
+  }
+  /** Centered "Are you sure?" popup (log out, reset, discard edits), like the Flutter app's showConfirmDialog.
+   *  Tapping outside or Escape counts as Cancel. */
+  function ConfirmDialog({ title, text, confirmLabel, cancelLabel = 'Cancel', danger = false, onConfirm, onCancel }) {
+    const ref = React.useRef(null);
+    useModal(ref, onCancel, false);
+    return h('div', { className: 'overlay center', onMouseDown: e => { if (e.target === e.currentTarget) onCancel(); } },
+      h('div', { ref, className: 'dialog', role: 'alertdialog', 'aria-modal': 'true', 'aria-labelledby': 'dialog-title', 'aria-describedby': 'dialog-text' },
+        h('h2', { id: 'dialog-title', className: 'sheet-title' }, title),
+        h('p', { id: 'dialog-text', className: 't-body muted mt-2' }, text),
+        h('div', { className: 'sheet-actions' },
+          h('button', { type: 'button', className: 'btn btn-outline', onClick: onCancel }, cancelLabel),
+          h('button', { type: 'button', className: 'btn ' + (danger ? 'btn-danger-solid' : 'btn-primary'), onClick: onConfirm }, confirmLabel))));
   }
   function EmptyState({ icon = 'check', tone, title, text, action, secondary }) {
     return h('div', { className: 'empty' },
@@ -497,7 +519,7 @@
   window.Mercato = Mercato;
   Object.assign(window, {
     Icon, useStoreTick, useLoading, reduceMotion, ToastHost, TabBar, BackButton, AppHeader, BellButton, Brand, ScreenLayout, AuthLayout,
-    BottomSheet, EmptyState, Spinner, ProductGridSkeleton, ListSkeleton, ProductImage, FavButton, ProductCard, ListCard, QtyStepper,
+    BottomSheet, ConfirmDialog, EmptyState, Spinner, ProductGridSkeleton, ListSkeleton, ProductImage, FavButton, ProductCard, ListCard, QtyStepper,
     FieldShell, TextField, useForm, RULES, ORDER_STAGES, OrderStatusBadge, orderItemImage, deliveryWindow, paymentLabel
   });
 })();
