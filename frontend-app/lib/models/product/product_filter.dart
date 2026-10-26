@@ -4,14 +4,15 @@ enum ProductSort {
   priceLow('Price: low to high'),
   priceHigh('Price: high to low'),
   rating('Top rated'),
-  name('Name: A to Z');
+  name('Name: A to Z'),
+  newest('Newest');
 
   final String label;
   const ProductSort(this.label);
 }
 
-/// Search text, sort and filters for the Categories screen. Later these become the
-/// query parameters of GET /products (q, sort, inStock); the category comes from the route.
+/// Search text, sort and filters for the Categories screen. They become the query parameters of
+/// GET /products (`query`, `sort`, `inStock`); the category comes from the route.
 class ProductFilter {
   final String query;
   final ProductSort sort;

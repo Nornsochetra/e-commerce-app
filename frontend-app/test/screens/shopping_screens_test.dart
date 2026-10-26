@@ -33,7 +33,7 @@ void main() {
     await wait(tester);
 
     await tester.enterText(find.byType(TextField), 'zzz');
-    await tester.pump();
+    await wait(tester, steps: 2); // the search runs after a short typing pause
     expect(find.text('No products found'), findsOneWidget);
     expect(find.textContaining('Nothing matches “zzz”'), findsOneWidget);
 
@@ -42,7 +42,7 @@ void main() {
     expect(richText('6 products'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'watch');
-    await tester.pump();
+    await wait(tester, steps: 2);
     expect(richText('1 product for “watch”'), findsOneWidget);
     expect(find.text('Minimal Watch'), findsOneWidget);
   });
@@ -55,7 +55,7 @@ void main() {
     expect(find.text('Show 6 products'), findsOneWidget);
 
     await tapVisible(tester, find.text('In stock only'));
-    await tester.pump();
+    await wait(tester, steps: 2); // the count comes from the server
     expect(find.text('Show 5 products'), findsOneWidget);
 
     await tester.tap(find.text('Show 5 products'));

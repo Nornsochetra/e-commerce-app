@@ -19,7 +19,7 @@ class ProductListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = product;
-    final subtitle = p.badges.isEmpty ? p.categoryName : '${p.categoryName} · ${formatLabel(p.badges.first)}';
+    final subtitle = p.cardBadge == null ? p.categoryName : '${p.categoryName} · ${formatLabel(p.cardBadge!)}';
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(

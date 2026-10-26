@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:frontend_app/data/mock_data.dart';
+import 'package:frontend_app/models/product/product.dart';
 import 'package:frontend_app/services/api/api_client.dart';
 import 'package:frontend_app/services/api/token_storage.dart';
 import 'package:frontend_app/services/auth/dev_account.dart';
@@ -43,8 +45,9 @@ class _Account {
   _Account(this.id, this.name, this.email, this.phone, this.password, this.createdAt);
 }
 
-/// A tiny in-memory stand-in for the auth and profile endpoints (AUT-*, USR-0401), so widget tests
-/// never need the real server. It starts with the dev account (as V2__seed_users.sql does), named Alex Morgan.
+/// A tiny in-memory stand-in for the auth, profile (AUT-*, USR-0401) and catalog (CAT-*) endpoints, so
+/// widget tests never need the real server. It starts with the dev account (as V2__seed_users.sql does),
+/// named Alex Morgan, and the same 4 categories and 6 products as the dev catalog seed.
 class FakeBackend {
   final _accounts = <_Account>[_Account('a1e00000-0000-4000-8000-000000000001', 'Alex Morgan', devAccountEmail, '+855 12 345 678', devAccountPassword, '2026-01-14T09:00:00Z')];
   final _accessTokens = <String, _Account>{};
@@ -75,6 +78,7 @@ class FakeBackend {
 
   Future<(int, Map<String, dynamic>)> _handle(RequestOptions r) async {
     if (offline) throw DioException(requestOptions: r, type: DioExceptionType.connectionError);
+    if (r.method == 'GET' && (r.path == '/categories' || r.path == '/products' || r.path.startsWith('/products/'))) return _catalog(r);
     final body = (r.data as Map<String, dynamic>?) ?? const {};
     final me = _accessTokens[(r.headers['Authorization'] as String?)?.replaceFirst('Bearer ', '')];
     switch ('${r.method} ${r.path}') {
@@ -113,6 +117,44 @@ class FakeBackend {
     return (404, errorEnvelope('NOT_FOUND'));
   }
 
+  /// GET /categories, GET /products (search, filters, sorts, paging) and GET /products/{id}.
+  (int, Map<String, dynamic>) _catalog(RequestOptions r) {
+    if (r.path == '/categories') {
+      return (200, okEnvelope([for (final c in mockCategories) {'id': c.id, 'name': c.name, 'slug': c.slug}]));
+    }
+    if (r.path.startsWith('/products/')) {
+      final id = r.path.substring('/products/'.length);
+      final matches = mockProducts.where((p) => p.id == id);
+      return matches.isEmpty ? (404, errorEnvelope('PRODUCT_NOT_FOUND')) : (200, okEnvelope(productJson(matches.first, withDescription: true)));
+    }
+    final q = r.queryParameters;
+    final categoryId = q['categoryId'] as String?;
+    if (categoryId != null && !mockCategories.any((c) => c.id == categoryId)) return (404, errorEnvelope('CATEGORY_NOT_FOUND'));
+    final query = (q['query'] as String? ?? '').toLowerCase();
+    var list = mockProducts
+        .where((p) => (categoryId == null || p.categoryId == categoryId) && p.name.toLowerCase().contains(query) && (q['inStock'] != true || p.inStock))
+        .toList();
+    list = switch (q['sort'] as String? ?? 'featured,asc') {
+      'price,asc' => list..sort((a, b) => a.price.compareTo(b.price)),
+      'price,desc' => list..sort((a, b) => b.price.compareTo(a.price)),
+      'rating,desc' => list..sort((a, b) => (b.rating ?? 0).compareTo(a.rating ?? 0)),
+      'name,asc' => list..sort((a, b) => a.name.compareTo(b.name)),
+      'createdAt,desc' => list.reversed.toList(),
+      _ => [...list.where((p) => p.featured), ...list.where((p) => !p.featured)],
+    };
+    final page = q['page'] as int? ?? 0;
+    final size = q['size'] as int? ?? 20;
+    final items = list.skip(page * size).take(size).toList();
+    return (200, okEnvelope({
+      'items': [for (final p in items) productJson(p)],
+      'page': page,
+      'size': size,
+      'totalElements': list.length,
+      'totalPages': (list.length / size).ceil(),
+      'hasNext': (page + 1) * size < list.length,
+    }));
+  }
+
   _Account? _find(String email) {
     for (final a in _accounts) {
       if (a.email == email.trim().toLowerCase()) return a;
@@ -140,3 +182,18 @@ class FakeBackend {
         'updatedAt': a.createdAt,
       };
 }
+
+/// A product as the API sends it: money as a decimal string, rating as a string, badges lowercase,
+/// and the description only on product details.
+Map<String, dynamic> productJson(Product p, {bool withDescription = false}) => {
+      'id': p.id,
+      'name': p.name,
+      if (withDescription) 'description': p.description,
+      'category': {'id': p.categoryId, 'name': p.categoryName},
+      'price': {'amount': p.price.toStringAsFixed(2), 'currency': 'USD'},
+      'availableQuantity': p.availableQuantity,
+      'rating': p.rating?.toStringAsFixed(1),
+      'imageUrl': p.imageUrl,
+      'badges': [for (final b in p.badges.reversed) b.toLowerCase()], // the real API doesn't keep the order either
+      'featured': p.featured,
+    };

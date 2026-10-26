@@ -36,7 +36,7 @@ class ProductCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (p.badges.isNotEmpty) Positioned(left: 10, top: 10, child: _Tag(formatLabel(p.badges.first))),
+              if (p.cardBadge != null) Positioned(left: 10, top: 10, child: _Tag(formatLabel(p.cardBadge!))),
               Positioned(
                 right: 4,
                 top: 4,

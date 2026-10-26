@@ -39,7 +39,7 @@ class _FilterSheetState extends State<_FilterSheet> {
   Widget build(BuildContext context) {
     final products = context.watch<ProductProvider>();
     final filter = products.filter;
-    final count = products.search(categoryId: products.categoryBySlug(_slug)?.id).length;
+    final count = products.resultsTotal; // the search re-runs as soon as an option changes
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

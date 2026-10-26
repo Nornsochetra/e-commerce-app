@@ -64,11 +64,13 @@ All 15 screens are built from the prototype. They are now being connected to the
 |---|---|---|
 | A | Foundation: `ApiClient` (dio), envelope + error codes, secure token storage, refresh on 401, health, dev catalog seed | Done |
 | B | Auth + profile (login, register, logout, forgot password, `/auth/me`, `PATCH /me/profile`); drop the mock demo account | Done |
-| C | Catalog: categories, server-side search/sort/filter, paging, product details | Next |
-| D | Cart + wishlist on the server (cart items have their own `itemId`) | To do |
+| C | Catalog: categories, server-side search/sort/filter, paging, product details | Done |
+| D | Cart + wishlist on the server (cart items have their own `itemId`) | Next |
 | E | Orders (preview, place with `Idempotency-Key`, history) + notifications | To do |
 
-Known API differences to handle: register takes no phone (send it via `PATCH /me/profile`), `DELETE /notifications` has no undo, lists are paginated, money is `{amount: "89.00", currency}`.
+Known API differences to handle: register takes no phone (send it via `PATCH /me/profile`), `DELETE /notifications` has no undo, lists are paginated, money is `{amount: "89.00", currency}`, badges arrive lowercase and unordered (use `Product.cardBadge` / `badgesInOrder`).
+
+Catalog (slice C): `ProductProvider.load()` reads categories and one page of up to 100 products (Home sections, related products, and id lookups for the still-mock cart/wishlist/orders); the Categories screen searches on the server (`showCategory`, `updateFilter` with a 300 ms typing pause, `loadMoreResults` while scrolling); product details call `loadProduct`. Catalog reads are public (`auth: false`).
 
 ## Flutter architecture (full spec: `docs/frontend/flutter-structure.md`)
 

@@ -37,12 +37,19 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   void initState() {
     super.initState();
     _search = TextEditingController(text: context.read<ProductProvider>().filter.query);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _handleRouteRequests(widget.focusSearch, widget.openFilters));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<ProductProvider>().showCategory(widget.category);
+      _handleRouteRequests(widget.focusSearch, widget.openFilters);
+    });
   }
 
   @override
   void didUpdateWidget(CategoriesScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.category != oldWidget.category) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? context.read<ProductProvider>().showCategory(widget.category) : null);
+    }
     final focus = widget.focusSearch && !oldWidget.focusSearch;
     final filters = widget.openFilters && !oldWidget.openFilters;
     if (focus || filters) WidgetsBinding.instance.addPostFrameCallback((_) => _handleRouteRequests(focus, filters));
@@ -88,13 +95,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     final products = context.watch<ProductProvider>();
     final filter = products.filter;
     final category = products.categoryBySlug(widget.category);
-    final shown = products.search(categoryId: category?.id);
+    final shown = products.results;
+    final total = products.resultsTotal;
     final query = filter.query.trim();
 
-    final summary = [
-      if (query.isNotEmpty) ' for “$query”',
-      if (filter.inStockOnly) ' · in stock',
-    ].join();
+    final summary = [if (query.isNotEmpty) ' for “$query”', if (filter.inStockOnly) ' · in stock'].join();
 
     return Scaffold(
       appBar: AppHeader(
@@ -112,68 +117,105 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   child: Container(
                     width: 12,
                     height: 12,
-                    decoration: BoxDecoration(color: AppColors.success, shape: BoxShape.circle, border: Border.all(color: AppColors.background, width: 2)),
+                    decoration: BoxDecoration(
+                      color: AppColors.success,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.background, width: 2),
+                    ),
                   ),
                 ),
               ),
           ],
         ),
       ),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(AppSpacing.page, AppSpacing.xs, AppSpacing.page, MediaQuery.paddingOf(context).bottom + AppSpacing.xxl),
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        children: [
-          AppSearchBar(controller: _search, focusNode: _searchFocus, onChanged: _onSearch, onClear: _clearSearch),
-          const SizedBox(height: AppSpacing.lg),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            clipBehavior: Clip.none,
-            child: Row(
-              children: [
-                CategoryChip(label: 'All', selected: category == null, onTap: () => _pickCategory(null)),
-                for (final c in products.categories) ...[
-                  const SizedBox(width: AppSpacing.sm),
-                  CategoryChip(label: c.name, iconAsset: categoryIconAsset(c.slug), selected: category?.id == c.id, onTap: () => _pickCategory(c.slug)),
+      // Loads the next page of results when the list is scrolled close to its end.
+      body: NotificationListener<ScrollNotification>(
+        onNotification: (n) {
+          if (n.metrics.axis == Axis.vertical && n.metrics.extentAfter < 600) products.loadMoreResults();
+          return false;
+        },
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(AppSpacing.page, AppSpacing.xs, AppSpacing.page, MediaQuery.paddingOf(context).bottom + AppSpacing.xxl),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          children: [
+            AppSearchBar(controller: _search, focusNode: _searchFocus, onChanged: _onSearch, onClear: _clearSearch),
+            const SizedBox(height: AppSpacing.lg),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              child: Row(
+                children: [
+                  CategoryChip(label: 'All', selected: category == null, onTap: () => _pickCategory(null)),
+                  for (final c in products.categories) ...[
+                    const SizedBox(width: AppSpacing.sm),
+                    CategoryChip(label: c.name, iconAsset: categoryIconAsset(c.slug), selected: category?.id == c.id, onTap: () => _pickCategory(c.slug)),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Row(
-            children: [
-              Expanded(
-                child: Semantics(
-                  liveRegion: true,
-                  child: Text.rich(
-                    TextSpan(style: AppText.meta, children: [
-                      TextSpan(text: '${shown.length}', style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.text)),
-                      TextSpan(text: ' ${shown.length == 1 ? 'product' : 'products'}$summary'),
-                    ]),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+            const SizedBox(height: AppSpacing.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text.rich(
+                      TextSpan(
+                        style: AppText.meta,
+                        children: [
+                          TextSpan(
+                            text: '$total',
+                            style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.text),
+                          ),
+                          TextSpan(text: ' ${total == 1 ? 'product' : 'products'}$summary'),
+                        ],
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              _SortMenu(value: filter.sort, onChanged: (s) => products.updateFilter(filter.copyWith(sort: s))),
+                const SizedBox(width: AppSpacing.md),
+                _SortMenu(
+                  value: filter.sort,
+                  onChanged: (s) => products.updateFilter(filter.copyWith(sort: s)),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            if (products.resultsLoading && shown.isEmpty)
+              const ProductGridSkeleton()
+            else if (products.resultsError != null)
+              EmptyState(
+                icon: Icons.wifi_off_rounded,
+                title: 'Couldn’t load products',
+                message: products.resultsError!,
+                actionLabel: 'Try again',
+                onAction: products.categories.isEmpty ? products.load : products.refreshResults,
+              )
+            else if (shown.isEmpty)
+              EmptyState(
+                icon: Icons.search_rounded,
+                title: 'No products found',
+                message: query.isNotEmpty ? 'Nothing matches “$query”. Check the spelling or try a broader term.' : 'No products match these filters.',
+                actionLabel: 'Clear search & filters',
+                onAction: _clearAll,
+              )
+            else ...[
+              if (products.resultsLoading)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: AppSpacing.md),
+                  child: LinearProgressIndicator(minHeight: 2),
+                ),
+              ProductGrid(products: shown),
+              if (products.resultsLoadingMore)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                  child: Center(child: SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2.5))),
+                ),
             ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          if (products.isLoading)
-            const ProductGridSkeleton()
-          else if (products.error != null)
-            EmptyState(icon: Icons.wifi_off_rounded, title: 'Couldn’t load products', message: 'Check your connection and try again.', actionLabel: 'Try again', onAction: products.load)
-          else if (shown.isEmpty)
-            EmptyState(
-              icon: Icons.search_rounded,
-              title: 'No products found',
-              message: query.isNotEmpty ? 'Nothing matches “$query”. Check the spelling or try a broader term.' : 'No products match these filters.',
-              actionLabel: 'Clear search & filters',
-              onAction: _clearAll,
-            )
-          else
-            ProductGrid(products: shown),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -192,7 +234,11 @@ class _SortMenu extends StatelessWidget {
       child: Container(
         height: 40,
         padding: const EdgeInsets.only(left: 14, right: 8),
-        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(999), border: Border.all(color: AppColors.line)),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: AppColors.line),
+        ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<ProductSort>(
             value: value,

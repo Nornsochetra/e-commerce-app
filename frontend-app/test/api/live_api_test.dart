@@ -1,11 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_app/models/common/page_result.dart';
+import 'package:frontend_app/models/product/product_filter.dart';
 import 'package:frontend_app/services/api/api_client.dart';
 import 'package:frontend_app/services/api/api_exception.dart';
 import 'package:frontend_app/services/api/token_storage.dart';
 import 'package:frontend_app/services/auth/auth_service.dart';
 import 'package:frontend_app/services/auth/dev_account.dart';
 import 'package:frontend_app/services/health/health_service.dart';
+import 'package:frontend_app/services/product/product_service.dart';
 import 'package:frontend_app/services/user/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -50,6 +52,45 @@ void main() {
     final again = await api.get('/auth/me') as Map<String, dynamic>;
     expect(again['email'], _devEmail);
     expect((await tokens.read())!.accessToken, isNot('expired-or-broken'));
+  }, skip: !_live);
+
+  test('slice C service: categories, server search, filters, sorts, paging and details (read-only)', () async {
+    final catalog = ProductService(ApiClient(tokens: MemoryTokenStorage()));
+    final categories = await catalog.getCategories();
+    expect(categories.map((c) => c.slug), containsAll(['accessories', 'footwear', 'bags', 'electronics']));
+    final electronics = categories.firstWhere((c) => c.slug == 'electronics');
+
+    final all = await catalog.getProducts(size: 100);
+    final watch = all.items.firstWhere((p) => p.name == 'Minimal Watch');
+    expect(watch.price, 89.0);
+    expect(watch.badges, containsAll(['NEW', 'PREMIUM_PICK']));
+    expect(watch.description, isNull); // lists leave it out
+
+    expect((await catalog.getProducts(query: 'WATCH')).items.map((p) => p.name), contains('Minimal Watch'));
+    final inElectronics = await catalog.getProducts(categoryId: electronics.id);
+    expect(inElectronics.items.every((p) => p.categoryId == electronics.id), isTrue);
+    final inStockElectronics = await catalog.getProducts(categoryId: electronics.id, inStockOnly: true);
+    expect(inStockElectronics.items.every((p) => p.inStock), isTrue);
+    expect(inStockElectronics.items.map((p) => p.name), isNot(contains('Studio Headphones')));
+
+    for (final sort in ProductSort.values) {
+      final prices = (await catalog.getProducts(sort: sort, size: 100)).items.map((p) => p.price).toList();
+      if (sort == ProductSort.priceLow) expect(prices, [...prices]..sort());
+      if (sort == ProductSort.priceHigh) expect(prices, [...prices]..sort((a, b) => b.compareTo(a)));
+    }
+
+    final first = await catalog.getProducts(size: 4);
+    expect(first.items, hasLength(4));
+    expect(first.hasNext, all.totalElements > 4);
+    final second = await catalog.getProducts(page: 1, size: 4);
+    expect(second.items.map((p) => p.id).toSet().intersection(first.items.map((p) => p.id).toSet()), isEmpty);
+
+    final detail = await catalog.getProduct(watch.id);
+    expect(detail.description, isNotNull);
+    await expectLater(
+      catalog.getProduct('00000000-0000-4000-8000-000000000000'),
+      throwsA(isA<ApiException>().having((e) => e.code, 'code', 'PRODUCT_NOT_FOUND')),
+    );
   }, skip: !_live);
 
   test('slice B services: sign in, load and edit the profile (then restore it), log out everywhere', () async {

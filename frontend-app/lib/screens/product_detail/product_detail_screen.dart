@@ -41,24 +41,43 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   void _goBack() => context.canPop() ? context.pop() : context.go('/categories');
 
   @override
+  void initState() {
+    super.initState();
+    // Reads the product with its description and current stock (GET /products/{id}).
+    WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? context.read<ProductProvider>().loadProduct(widget.productId) : null);
+  }
+
+  @override
+  void didUpdateWidget(ProductDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.productId != oldWidget.productId) {
+      _quantity = 1;
+      WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? context.read<ProductProvider>().loadProduct(widget.productId) : null);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final products = context.watch<ProductProvider>();
-    final p = products.productById(widget.productId);
+    final id = widget.productId;
+    // A product seen in a list shows straight away; the details call then adds the description.
+    final p = products.productById(id);
+    final error = products.productError(id);
 
-    if (p == null) {
+    if (p == null || products.isMissing(id)) {
       return Scaffold(
         appBar: const AppHeader(title: 'Product', backFallback: '/categories'),
-        body: products.isLoading
-            ? const Padding(padding: EdgeInsets.all(AppSpacing.page), child: SkeletonBox(aspectRatio: 1, radius: AppSpacing.radiusXl))
-            : products.error != null
-                ? EmptyState(icon: Icons.wifi_off_rounded, title: 'Couldn’t load this product', message: 'Check your connection and try again.', actionLabel: 'Try again', onAction: products.load)
-                : EmptyState(
-                    icon: Icons.search_off_rounded,
-                    title: 'Product not found',
-                    message: 'This product may no longer be available.',
-                    actionLabel: 'Browse products',
-                    onAction: () => context.go('/categories'),
-                  ),
+        body: products.isMissing(id)
+            ? EmptyState(
+                icon: Icons.search_off_rounded,
+                title: 'Product not found',
+                message: 'This product may no longer be available.',
+                actionLabel: 'Browse products',
+                onAction: () => context.go('/categories'),
+              )
+            : error != null
+                ? EmptyState(icon: Icons.wifi_off_rounded, title: 'Couldn’t load this product', message: error, actionLabel: 'Try again', onAction: () => products.loadProduct(id))
+                : const Padding(padding: EdgeInsets.all(AppSpacing.page), child: SkeletonBox(aspectRatio: 1, radius: AppSpacing.radiusXl)),
       );
     }
 
@@ -204,7 +223,7 @@ class _Summary extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text(p.categoryName.toUpperCase(), style: AppText.eyebrow),
-            for (final b in p.badges) StatusBadge(label: formatLabel(b)),
+            for (final b in p.badgesInOrder) StatusBadge(label: formatLabel(b)),
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
