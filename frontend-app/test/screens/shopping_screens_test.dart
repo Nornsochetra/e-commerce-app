@@ -77,7 +77,7 @@ void main() {
     expect(find.text('Welcome back'), findsOneWidget);
     expect(find.text('Create an account'), findsOneWidget); // new users can sign up from here
 
-    await tester.tap(find.text('Fill in'));
+    await fillInDevAccount(tester);
     await tester.pump();
     await tapVisible(tester, find.widgetWithText(AppButton, 'Sign in'));
     await wait(tester);

@@ -1,10 +1,8 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth/auth_provider.dart';
-import '../../services/auth/dev_account.dart';
 import '../../theme.dart';
 import '../../utils/validators.dart';
 import '../../widgets/buttons/app_button.dart';
@@ -13,7 +11,6 @@ import '../../widgets/inputs/app_text_field.dart';
 import '../../widgets/layout/auth_layout.dart';
 
 /// Sign in with email + password (prototype: login.html) through POST /auth/login.
-/// Debug builds offer the backend's seeded dev account as "Fill in".
 class LoginScreen extends StatefulWidget {
   final String? redirectTo; // where to go after signing in (set when a guest opened a protected screen)
   const LoginScreen({super.key, this.redirectTo});
@@ -47,14 +44,6 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailFocus.dispose();
     _passwordFocus.dispose();
     super.dispose();
-  }
-
-  void _fillDemo() {
-    setState(() {
-      _email.text = devAccountEmail;
-      _password.text = devAccountPassword;
-      _error = null;
-    });
   }
 
   Future<void> _signIn() async {
@@ -91,10 +80,6 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: AppSpacing.xs),
         const Text('Sign in to continue shopping.', style: AppText.bodyMuted),
         const SizedBox(height: AppSpacing.xl),
-        if (kDebugMode) ...[
-          _DemoAccountBox(onFill: _fillDemo),
-          const SizedBox(height: AppSpacing.xl),
-        ],
         if (auth.sessionExpired && _error == null) ...[
           const AlertBanner(message: 'Your session has ended. Please sign in again.'),
           const SizedBox(height: AppSpacing.lg),
@@ -149,39 +134,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         ),
       ],
-    );
-  }
-}
-
-/// Mint box showing the dev account with a "Fill in" button (debug builds only).
-class _DemoAccountBox extends StatelessWidget {
-  final VoidCallback onFill;
-  const _DemoAccountBox({required this.onFill});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.md, AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.mintSoft,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        border: Border.all(color: const Color(0xFF6EE7B7)),
-      ),
-      child: Row(
-        children: [
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Dev account', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                SizedBox(height: 2),
-                Text('$devAccountEmail · $devAccountPassword', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
-              ],
-            ),
-          ),
-          AppButton(label: 'Fill in', variant: AppButtonVariant.secondary, small: true, expanded: false, onPressed: onFill),
-        ],
-      ),
     );
   }
 }

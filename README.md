@@ -52,8 +52,8 @@ emulator itself, so pass the host address instead:
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8081/api/v1
 ```
 
-**Signing in:** debug builds show a **Fill in** button on the Sign in screen with the development
-account seeded by the backend (`user@example.com` / `Demo123!`). You can also create an account, or
+**Signing in:** use the development account seeded by the backend (`user@example.com` /
+`Demo123!`). You can also create an account, or
 continue as a guest to browse.
 
 ## Tests

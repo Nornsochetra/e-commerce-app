@@ -15,7 +15,7 @@ void main() {
     await wait(tester);
     expect(find.text('Welcome back'), findsOneWidget); // cart needs sign-in → login
 
-    await tester.tap(find.text('Fill in'));
+    await fillInDevAccount(tester);
     await tester.pump();
     await tapVisible(tester, find.text('Sign in'));
     await wait(tester);

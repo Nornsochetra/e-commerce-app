@@ -50,6 +50,12 @@ void main() {
     await wishlist.save(sunglasses);
   }
 
+  Future<void> fillInDevAccount(WidgetTester tester) async {
+    await tester.enterText(find.byType(TextField).at(0), devAccountEmail);
+    await tester.enterText(find.byType(TextField).at(1), devAccountPassword);
+    await tester.pump();
+  }
+
   Future<void> tap(WidgetTester tester, Finder finder) async {
     await tester.ensureVisible(finder);
     await tester.pump();
@@ -68,7 +74,7 @@ void main() {
     await wait(tester, 300);
     await binding.takeScreenshot('s2_03_login_errors');
 
-    await tap(tester, find.text('Fill in'));
+    await fillInDevAccount(tester);
     await tester.enterText(find.byType(TextField).at(1), 'wrongpass1');
     await tap(tester, find.text('Sign in'));
     await wait(tester, 800);
@@ -93,7 +99,7 @@ void main() {
     await freshStart();
     await tester.pumpWidget(ApmApp(authProvider: AuthProvider()));
     await wait(tester, 3300);
-    await tap(tester, find.text('Fill in'));
+    await fillInDevAccount(tester);
     await tap(tester, find.text('Sign in'));
     await wait(tester, 2500); // product photos load from the network
     await binding.takeScreenshot('s3_01_home');
@@ -137,7 +143,7 @@ void main() {
     await prepareDevAccount();
     await tester.pumpWidget(ApmApp(authProvider: AuthProvider()));
     await wait(tester, 3300);
-    await tap(tester, find.text('Fill in'));
+    await fillInDevAccount(tester);
     await tap(tester, find.text('Sign in'));
     await wait(tester, 1500);
 
@@ -176,7 +182,7 @@ void main() {
     await prepareDevAccount();
     await tester.pumpWidget(ApmApp(authProvider: AuthProvider()));
     await wait(tester, 3300);
-    await tap(tester, find.text('Fill in'));
+    await fillInDevAccount(tester);
     await tap(tester, find.text('Sign in'));
     await wait(tester, 1500);
 

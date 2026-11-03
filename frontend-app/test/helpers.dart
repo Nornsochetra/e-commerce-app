@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_app/main.dart';
 import 'package:frontend_app/providers/auth/auth_provider.dart';
 import 'package:frontend_app/services/api/api_client.dart';
+import 'package:frontend_app/services/auth/dev_account.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_api.dart';
@@ -49,10 +50,16 @@ Future<FakeBackend> startAsGuest(WidgetTester tester) async {
   return backend;
 }
 
+/// Types the dev account's email and password into the Sign in form.
+Future<void> fillInDevAccount(WidgetTester tester) async {
+  await tester.enterText(find.byType(EditableText).at(0), devAccountEmail);
+  await tester.enterText(find.byType(EditableText).at(1), devAccountPassword);
+}
+
 /// Starts the app and signs in with the dev account (Home).
 Future<FakeBackend> startSignedIn(WidgetTester tester) async {
   final backend = await startAppAtLogin(tester);
-  await tester.tap(find.text('Fill in'));
+  await fillInDevAccount(tester);
   await tester.pump();
   await tapVisible(tester, find.text('Sign in'));
   await wait(tester);

@@ -61,7 +61,7 @@ void main() {
     final before = backend.adapter.requests.length;
     await tester.tap(find.widgetWithText(AppButton, 'Sign in'));
     await wait(tester);
-    await tester.tap(find.text('Fill in'));
+    await fillInDevAccount(tester);
     await tester.pump();
     await tapVisible(tester, find.widgetWithText(AppButton, 'Sign in'));
     await wait(tester);

@@ -61,7 +61,7 @@ frontend-app/
     │   ├── health/health_service.dart GET /health
     │   ├── auth/
     │   │   ├── auth_service.dart      login, register (+ phone via profile), logout, change password
-    │   │   └── dev_account.dart       backend dev account, offered as "Fill in" in debug builds
+    │   │   └── dev_account.dart       backend dev account (used by tests)
     │   ├── product/product_service.dart
     │   ├── cart/cart_service.dart
     │   ├── order/order_service.dart
