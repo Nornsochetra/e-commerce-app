@@ -32,6 +32,9 @@ cp .env.example .env      # once: set DATABASE_PASSWORD to your PostgreSQL passw
 Other settings (all optional in `dev`): `DATABASE_URL`, `DATABASE_USERNAME`, `RSA_PUBLIC_KEY` /
 `RSA_PRIVATE_KEY` (token signing keys), `CORS_ALLOWED_ORIGINS`.
 
+Without `RSA_*` keys, `dev` creates a signing keypair once in `backend/.dev-keys/` (git-ignored) and
+reuses it, so the app stays signed in when the API restarts. Deleting that folder signs everyone out.
+
 ## Run the app
 
 Start the backend first, then:
@@ -82,5 +85,5 @@ spec for the app screens; `docs/prototype/screens.html` lists every screen.
 
 ## What v1 does not include
 
-Card payments (cash on delivery only), password-reset emails, push notifications, order
+Card payments (cash on delivery only), password reset for signed-out users, push notifications, order
 cancellation and returns, tax and discounts, and Settings/About/Contact screens.

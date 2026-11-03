@@ -114,17 +114,4 @@ void main() {
     expect(find.text('An account with this email already exists.'), findsOneWidget);
     expect(find.text('Edit profile'), findsOneWidget); // the sheet stays open
   });
-
-  testWidgets('forgot password while offline shows an error instead of the confirmation', (tester) async {
-    final backend = await startAppAtLogin(tester);
-    await tapVisible(tester, find.text('Forgot password?'));
-    await wait(tester, steps: 3);
-    backend.offline = true;
-
-    await tester.enterText(find.byType(TextField), 'someone@example.com');
-    await tester.tap(find.text('Send instructions'));
-    await wait(tester, steps: 3);
-    expect(find.textContaining('Can’t reach APM'), findsOneWidget);
-    expect(find.text('Check your email'), findsNothing);
-  });
 }

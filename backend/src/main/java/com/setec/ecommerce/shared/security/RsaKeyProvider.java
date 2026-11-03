@@ -3,6 +3,9 @@ package com.setec.ecommerce.shared.security;
 import com.setec.ecommerce.shared.properties.JwtProperties;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -50,6 +53,19 @@ public class RsaKeyProvider {
       this.privateKey =
           loadPrivateKey(
               resourceLoader.getResource(properties.getPrivateKey()), properties.getPrivateKey());
+    } else if (StringUtils.hasText(properties.getDevKeyDir())) {
+      Path dir = Path.of(properties.getDevKeyDir()).toAbsolutePath();
+      Path publicFile = dir.resolve("public-key.pem");
+      Path privateFile = dir.resolve("private-key.pem");
+      if (!Files.exists(publicFile) || !Files.exists(privateFile)) {
+        writeKeyPair(generateKeyPair(), publicFile, privateFile);
+        log.info("Created a dev RSA keypair in {}", dir);
+      }
+      this.publicKey =
+          loadPublicKey(resourceLoader.getResource("file:" + publicFile), publicFile.toString());
+      this.privateKey =
+          loadPrivateKey(resourceLoader.getResource("file:" + privateFile), privateFile.toString());
+      log.info("Using the dev RSA keypair in {}, so tokens survive a restart", dir);
     } else {
       KeyPair pair = generateKeyPair();
       this.publicKey = (RSAPublicKey) pair.getPublic();
@@ -57,6 +73,29 @@ public class RsaKeyProvider {
       log.warn(
           "Using an ephemeral RSA keypair. Tokens expire on restart and cannot be verified by other instances.");
     }
+  }
+
+  /** Saves a generated pair as PEM (X.509 public, PKCS#8 private), readable only by the owner. */
+  private void writeKeyPair(KeyPair pair, Path publicFile, Path privateFile) {
+    try {
+      Files.createDirectories(publicFile.getParent());
+      Files.writeString(publicFile, toPem("PUBLIC KEY", pair.getPublic().getEncoded()));
+      Files.writeString(privateFile, toPem("PRIVATE KEY", pair.getPrivate().getEncoded()));
+      try {
+        Files.setPosixFilePermissions(privateFile, PosixFilePermissions.fromString("rw-------"));
+      } catch (UnsupportedOperationException ignored) {
+        // Not a POSIX file system (Windows): keep the default permissions.
+      }
+    } catch (IOException exception) {
+      throw new IllegalStateException(
+          "Could not save the dev RSA keypair in " + publicFile.getParent(), exception);
+    }
+  }
+
+  private static String toPem(String type, byte[] der) {
+    String body =
+        Base64.getMimeEncoder(64, "\n".getBytes(StandardCharsets.US_ASCII)).encodeToString(der);
+    return "-----BEGIN " + type + "-----\n" + body + "\n-----END " + type + "-----\n";
   }
 
   private RSAPublicKey loadPublicKey(Resource resource, String location) {

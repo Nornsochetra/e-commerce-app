@@ -48,7 +48,7 @@ class _Account {
   String name;
   String email;
   String phone;
-  final String password;
+  String password;
   final String createdAt;
   _Account(this.id, this.name, this.email, this.phone, this.password, this.createdAt);
 }
@@ -131,8 +131,14 @@ class FakeBackend {
         final account = _refreshTokens[body['refreshToken']];
         if (account == null) return (401, errorEnvelope('INVALID_REFRESH_TOKEN'));
         return (200, okEnvelope(_session(account)..remove('user')));
-      case 'POST /auth/forgot-password':
-        return (200, okEnvelope(<String, dynamic>{}));
+      case 'POST /auth/change-password':
+        if (me == null) return (401, errorEnvelope('INVALID_TOKEN'));
+        if (body['currentPassword'] != me.password) return (400, errorEnvelope('CURRENT_PASSWORD_INCORRECT'));
+        me.password = body['newPassword'] as String;
+        // Like the token version bump: every older token of the account stops working.
+        _accessTokens.removeWhere((_, a) => a == me);
+        _refreshTokens.removeWhere((_, a) => a == me);
+        return (200, okEnvelope(_session(me)..remove('user')));
       case 'POST /auth/logout':
         if (me == null) return (401, errorEnvelope('INVALID_TOKEN'));
         _accessTokens.removeWhere((_, a) => a == me);

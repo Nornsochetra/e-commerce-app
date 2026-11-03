@@ -225,6 +225,95 @@ class AuthApiTest {
   }
 
   @Test
+  void changePasswordRevokesOldTokensAndReturnsAWorkingPair() throws Exception {
+    MvcResult registration = register("Alex", "alex@example.com", "password123");
+    String body = registration.getResponse().getContentAsString();
+    String oldAccess = JsonPath.read(body, "$.data.accessToken");
+    String oldRefresh = JsonPath.read(body, "$.data.refreshToken");
+
+    MvcResult changed =
+        mockMvc
+            .perform(
+                post("/api/v1/auth/change-password")
+                    .header("Authorization", "Bearer " + oldAccess)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(changePassword("password123", "newPassword456")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.common.apiId").value("AUT-0206"))
+            .andExpect(jsonPath("$.data.accessToken").value(not(blankOrNullString())))
+            .andExpect(jsonPath("$.data.refreshToken").value(not(blankOrNullString())))
+            .andExpect(jsonPath("$.data.expiresIn").value(900))
+            .andReturn();
+    String newAccess =
+        JsonPath.read(changed.getResponse().getContentAsString(), "$.data.accessToken");
+
+    mockMvc
+        .perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + oldAccess))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.status.code").value("INVALID_TOKEN"));
+    mockMvc
+        .perform(
+            post("/api/v1/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonToken(oldRefresh)))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.status.code").value("INVALID_REFRESH_TOKEN"));
+    mockMvc
+        .perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + newAccess))
+        .andExpect(status().isOk());
+
+    assertInvalidCredentials("alex@example.com", "password123");
+    mockMvc
+        .perform(
+            post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"alex@example.com\",\"password\":\"newPassword456\"}"))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  void changePasswordRejectsWrongCurrentPasswordAndKeepsTheOldOne() throws Exception {
+    MvcResult registration = register("Alex", "alex@example.com", "password123");
+    String accessToken =
+        JsonPath.read(registration.getResponse().getContentAsString(), "$.data.accessToken");
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/change-password")
+                .header("Authorization", "Bearer " + accessToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(changePassword("wrongPassword", "newPassword456")))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.status.code").value("CURRENT_PASSWORD_INCORRECT"));
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/change-password")
+                .header("Authorization", "Bearer " + accessToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(changePassword("password123", "short")))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.status.code").value("VALIDATION_ERROR"));
+
+    mockMvc
+        .perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + accessToken))
+        .andExpect(status().isOk());
+    User stored = userRepository.findByEmailIgnoringCase("alex@example.com").orElseThrow();
+    assertThat(passwordEncoder.matches("password123", stored.getPasswordHash())).isTrue();
+  }
+
+  @Test
+  void changePasswordRequiresAccessToken() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/auth/change-password")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(changePassword("password123", "newPassword456")))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.status.code").value("UNAUTHORIZED"));
+  }
+
+  @Test
   void requestValidationRejectsShortPasswordAndUnknownField() throws Exception {
     mockMvc
         .perform(
@@ -283,6 +372,14 @@ class AuthApiTest {
                 .content("{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}"))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.status.code").value("INVALID_CREDENTIALS"));
+  }
+
+  private String changePassword(String currentPassword, String newPassword) {
+    return "{\"currentPassword\":\""
+        + currentPassword
+        + "\",\"newPassword\":\""
+        + newPassword
+        + "\"}";
   }
 
   private String jsonToken(String token) {

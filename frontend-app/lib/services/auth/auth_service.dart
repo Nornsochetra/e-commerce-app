@@ -7,7 +7,7 @@ import '../api/token_storage.dart';
 /// How the app was left last time.
 enum SessionType { signedIn, guest }
 
-/// Signs users in and out through the API (AUT-0201 … AUT-0205).
+/// Signs users in and out and changes the password through the API (AUT-0201 … AUT-0206).
 /// The tokens are kept by [ApiClient.tokens]; "continue as guest" is only a flag on this device.
 /// Failures throw [ApiException]; show its `userMessage`.
 class AuthService {
@@ -59,8 +59,12 @@ class AuthService {
     await _api.tokens.clear();
   }
 
-  /// The server always answers the same way, so the app never reveals whether an account exists.
-  Future<void> requestPasswordReset(String email) => _api.post('/auth/forgot-password', body: {'email': email.trim()}, auth: false);
+  /// Changes the password. The server signs out every other device and sends a new token pair,
+  /// which replaces the old one so this device stays signed in.
+  Future<void> changePassword({required String currentPassword, required String newPassword}) async {
+    final data = await _api.post('/auth/change-password', body: {'currentPassword': currentPassword, 'newPassword': newPassword});
+    await _api.tokens.save(TokenPair.fromJson(data as Map<String, dynamic>));
+  }
 
   Future<void> _startSession(Map<String, dynamic> data) async {
     await _api.tokens.save(TokenPair.fromJson(data));

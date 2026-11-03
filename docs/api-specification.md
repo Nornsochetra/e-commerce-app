@@ -91,12 +91,12 @@ Implemented response data:
 | `AUT-0201` | `POST /auth/login` | Public | Exchange email/password for tokens and user. |
 | `AUT-0202` | `POST /auth/register` | Public | Create an account. |
 | `AUT-0203` | `POST /auth/refresh` | Refresh token | Issue a new token pair. |
-| `AUT-0204` | `POST /auth/forgot-password` | Public | Begin account recovery without revealing account existence. |
+| `AUT-0204` | `POST /auth/forgot-password` | Public | Begin account recovery without revealing account existence. Not used by the app. |
 | `AUT-0205` | `POST /auth/logout` | Access token | Revoke all tokens for the current account. |
+| `AUT-0206` | `POST /auth/change-password` | Access token | Replace the password and revoke every earlier token. |
 | `AUT-0601` | `GET /auth/me` | Access token | Read the current user's full profile. |
 
-Verification and completion of password reset are intentionally absent until the recovery delivery
-method is approved in [authentication.md](features/authentication.md).
+Password reset for signed-out users is out of scope; signed-in users use `AUT-0206`.
 
 ### 3.3 `USR` — profile
 
@@ -176,6 +176,7 @@ below define shared shapes. Envelope `status` and `common` fields are omitted fr
 | `AUT-0203` | `refreshToken` | Rotated `accessToken`, `refreshToken`, `expiresIn` | `INVALID_REFRESH_TOKEN` |
 | `AUT-0204` | `email` | Empty object | No account-existence error is exposed. |
 | `AUT-0205` | None | Empty object | None. |
+| `AUT-0206` | `currentPassword`, `newPassword` | New `accessToken`, `refreshToken`, `expiresIn` | `CURRENT_PASSWORD_INCORRECT` |
 | `AUT-0601` | None | `CurrentUser` | `USER_NOT_FOUND` |
 | `USR-0401` | Any of `name`, `email`, `phone` | Updated `CurrentUser` | `EMAIL_ALREADY_REGISTERED` |
 | `CAT-0101` | None | Array of `Category` | None. |
@@ -284,6 +285,15 @@ account on all devices. The client must also discard its locally stored tokens.
 Request: `{ "email": "alex@example.com" }`. The endpoint always returns 200 with `data: {}` for a
 well-formed email so account existence is not disclosed. Delivery and reset-completion endpoints are
 deferred.
+
+### 4.2.2.1 Change password · `AUT-0206`
+
+Request: `{ "currentPassword": "password123", "newPassword": "newPassword456" }`. `newPassword`
+follows the registration rule (8–72 characters). A wrong `currentPassword` returns 400
+`CURRENT_PASSWORD_INCORRECT` (not 401, so clients do not try a token refresh). On success the password
+hash is replaced and the token version increments, revoking every earlier access and refresh token on
+all devices. The response is a new token pair, shaped like `AUT-0203`, that the caller stores to stay
+signed in.
 
 ### 4.2.3 Current user · `AUT-0601`
 
@@ -673,6 +683,7 @@ the inbox is already in the target state. These counts let the prototype update 
 | `INVALID_CREDENTIALS` | 401 | AUTHENTICATION | Implemented in shared catalogue | Email or password does not match. |
 | `ACCOUNT_DISABLED` | 401 | AUTHENTICATION | Implemented in shared catalogue | Credentials match an inactive account. |
 | `EMAIL_ALREADY_REGISTERED` | 409 | CONFLICT | Implemented with auth | The normalized email already belongs to an account. |
+| `CURRENT_PASSWORD_INCORRECT` | 400 | VALIDATION | Implemented with auth | Change password was sent with a wrong current password. |
 | `INVALID_REFRESH_TOKEN` | 401 | AUTHENTICATION | Implemented with auth | Refresh token is malformed, expired, has the wrong type, or does not identify a current user. |
 | `USER_NOT_FOUND` | 404 | NOT_FOUND | Implemented with current identity | Current account no longer resolves. |
 | `PRODUCT_NOT_FOUND` | 404 | NOT_FOUND | Implemented with catalog | Product is missing or not visible. |

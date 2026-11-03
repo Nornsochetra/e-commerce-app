@@ -3,3 +3,4 @@ build/
 .env
 logs/
 *.pem
+.dev-keys/

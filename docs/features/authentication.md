@@ -9,7 +9,6 @@ Authentication provides the initial application entry and the flows required for
 - Introduce the application through a splash screen.
 - Allow an existing user to log in.
 - Allow a new user to register.
-- Allow a user to begin password recovery.
 - Provide clear validation, loading, success, and failure feedback.
 
 ## 3. Actors
@@ -39,12 +38,10 @@ Authentication provides the initial application entry and the flows required for
 - Require name, email, password, and matching password confirmation. Registration signs the user in;
   email verification and consent capture are deferred.
 
-### 4.4 Forgot Password
+### 4.4 Forgot Password (removed)
 
-- Allow a user to request account recovery.
-- Explain the next recovery step after a successful request.
-- Accept email and always show the same acknowledgement. Delivery and reset completion are deferred
-  until an email provider is selected.
+The app has no forgot-password screen. Signed-in users change their password from Profile (see
+[user-profile.md](user-profile.md)). The backend still accepts `AUT-0204`, but the app does not call it.
 
 ## 5. Primary User Flows
 
@@ -72,18 +69,11 @@ Authentication provides the initial application entry and the flows required for
 4. The user submits the form.
 5. The application displays the appropriate success or error state.
 
-### 5.4 Forgot Password
-
-1. The user opens the forgot-password screen.
-2. The user supplies the required account identifier.
-3. The application validates and submits the request.
-4. The application displays recovery instructions or an error.
-
 ## 6. Functional Requirements
 
 - AUTH-FR-001: The application must display a splash screen when launched.
 - AUTH-FR-002: The application must provide navigation from login to registration.
-- AUTH-FR-003: The application must provide navigation from login to forgot password.
+- AUTH-FR-003: Removed (login no longer links to forgot password).
 - AUTH-FR-004: The application must prevent submission when required visible fields are invalid.
 - AUTH-FR-005: The application must show submission progress.
 - AUTH-FR-006: The application must show understandable success and error feedback.
@@ -140,4 +130,4 @@ Authentication provides the initial application entry and the flows required for
 - User profile management
 - Product browsing
 - Shopping and ordering
-- Email verification, social login, multi-factor authentication, and completed password-reset delivery
+- Email verification, social login, multi-factor authentication, and password reset for signed-out users

@@ -60,7 +60,7 @@ frontend-app/
     │   │   └── token_storage.dart     access/refresh tokens in the Keychain / Keystore
     │   ├── health/health_service.dart GET /health
     │   ├── auth/
-    │   │   ├── auth_service.dart      login, register (+ phone via profile), logout, forgot password
+    │   │   ├── auth_service.dart      login, register (+ phone via profile), logout, change password
     │   │   └── dev_account.dart       backend dev account, offered as "Fill in" in debug builds
     │   ├── product/product_service.dart
     │   ├── cart/cart_service.dart
@@ -84,7 +84,6 @@ frontend-app/
     │   ├── register/
     │   │   ├── register_screen.dart
     │   │   └── widgets/password_strength.dart
-    │   ├── forgot_password/forgot_password_screen.dart
     │   ├── home/
     │   │   ├── home_screen.dart
     │   │   └── widgets/hero_banner.dart
@@ -230,7 +229,6 @@ Connecting the real backend later only means changing the service files. Provide
 | `/splash` | `splash/splash_screen.dart` | auth | `splash.html` |
 | `/login` | `login/login_screen.dart` | auth | `login.html` |
 | `/register` | `register/register_screen.dart` | auth | `register.html` |
-| `/forgot-password` | `forgot_password/forgot_password_screen.dart` | auth | `forgot-password.html` |
 | `/home` (tab) | `home/home_screen.dart` | product, cart, wishlist, order | `home.html` |
 | `/categories` (tab) | `categories/categories_screen.dart` | product, cart, wishlist | `categories.html` |
 | `/product/:id` | `product_detail/product_detail_screen.dart` | product, cart, wishlist | `product.html` |

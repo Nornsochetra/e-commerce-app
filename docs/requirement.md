@@ -70,7 +70,7 @@ Actions such as adding an item, changing its quantity, and removing it from the 
 | SCR-001 | Splash | Authentication | Current scope |
 | SCR-002 | Login | Authentication | Current scope |
 | SCR-003 | Register | Authentication | Current scope |
-| SCR-004 | Forgot password | Authentication | Current scope |
+| SCR-004 | Forgot password | Authentication | Removed; signed-in users change their password from Profile |
 | SCR-005 | User profile | User profile | Current scope |
 | SCR-006 | Edit profile | User profile | Current scope |
 | SCR-007 | Home | Product catalog | Current scope |
@@ -103,8 +103,8 @@ The current scope defines 19 screens. The three deferred screens bring the compl
 - Access tokens last 15 minutes; refresh tokens last 7 days. Refreshing issues a new pair without
   invalidating earlier unexpired pairs; logout invalidates all tokens for the account.
 - Registration signs the user in immediately. Email verification is deferred.
-- Password recovery accepts an email and always returns the same acknowledgement. Recovery delivery
-  and reset completion remain deferred until an email provider is selected.
+- Signed-in users change their password from Profile by entering the current one. The change signs
+  out every other device. Password recovery for signed-out users (email reset) is out of scope.
 
 ### 7.2 Shopping ownership
 

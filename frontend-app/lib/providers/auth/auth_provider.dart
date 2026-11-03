@@ -4,6 +4,9 @@ import '../../services/api/api_client.dart';
 import '../../services/api/api_exception.dart';
 import '../../services/auth/auth_service.dart';
 
+/// What happened when changing the password.
+enum PasswordChangeResult { changed, wrongPassword, failed }
+
 /// Where the user is in the sign-in flow.
 enum AuthStatus { unknown, signedOut, guest, signedIn }
 
@@ -13,6 +16,8 @@ class AuthProvider extends ChangeNotifier {
 
   AuthStatus status = AuthStatus.unknown;
   bool isLoading = false;
+  bool isChangingPassword = false;
+  String? passwordError; // user-facing reason the last password change failed
 
   /// True after the server ended the session (tokens could not be refreshed); Sign in explains it.
   bool sessionExpired = false;
@@ -56,14 +61,20 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Returns an error message only when the request couldn't be sent (e.g. offline).
-  /// The screen shows the same confirmation for every email address.
-  Future<String?> requestPasswordReset(String email) async {
+  Future<PasswordChangeResult> changePassword({required String currentPassword, required String newPassword}) async {
+    if (isChangingPassword) return PasswordChangeResult.failed;
+    isChangingPassword = true;
+    passwordError = null;
+    notifyListeners();
     try {
-      await _service.requestPasswordReset(email);
-      return null;
+      await _service.changePassword(currentPassword: currentPassword, newPassword: newPassword);
+      return PasswordChangeResult.changed;
     } on ApiException catch (e) {
-      return e.isConnectionProblem ? e.userMessage : null;
+      passwordError = e.userMessage;
+      return e.code == 'CURRENT_PASSWORD_INCORRECT' ? PasswordChangeResult.wrongPassword : PasswordChangeResult.failed;
+    } finally {
+      isChangingPassword = false;
+      notifyListeners();
     }
   }
 

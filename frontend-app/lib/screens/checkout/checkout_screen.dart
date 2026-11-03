@@ -17,7 +17,6 @@ import '../../widgets/cards/price_summary.dart';
 import '../../widgets/cards/product_image.dart';
 import '../../widgets/feedback/alert_banner.dart';
 import '../../widgets/feedback/empty_state.dart';
-import '../../widgets/feedback/status_badge.dart';
 import '../../widgets/layout/action_dock.dart';
 import '../../widgets/layout/app_header.dart';
 import 'widgets/delivery_details.dart';
@@ -311,62 +310,41 @@ class _SectionTitle extends StatelessWidget {
       );
 }
 
-/// Cash on delivery (the only v1 method) and a disabled card option marked "Soon".
+/// Cash on delivery, the only v1 payment method, shown as the selected option.
 class _PaymentOptions extends StatelessWidget {
   const _PaymentOptions();
 
   @override
   Widget build(BuildContext context) {
-    Widget option({required bool selected, required String title, required String subtitle, required Widget trailing}) => Semantics(
-          inMutuallyExclusiveGroup: true,
-          checked: selected,
-          enabled: selected,
-          child: Opacity(
-            opacity: selected ? 1 : 0.55,
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: selected ? AppColors.mintSoft : AppColors.surface,
-                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                border: Border.all(color: selected ? AppColors.primary : AppColors.line, width: 1.5),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: selected ? AppColors.primaryDark : null,
-                      border: Border.all(color: selected ? AppColors.primaryDark : const Color(0xFFCBD5E1), width: 2),
-                    ),
-                    child: selected ? const Icon(Icons.check_rounded, size: 13, color: Colors.white) : null,
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [Text(title, style: AppText.head), Text(subtitle, style: AppText.meta)],
-                    ),
-                  ),
-                  trailing,
-                ],
+    return Semantics(
+      inMutuallyExclusiveGroup: true,
+      checked: true,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.mintSoft,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          border: Border.all(color: AppColors.primary, width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 22,
+              height: 22,
+              decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.primaryDark),
+              child: const Icon(Icons.check_rounded, size: 13, color: Colors.white),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [Text('Cash on delivery', style: AppText.head), Text('Pay the courier when your order arrives', style: AppText.meta)],
               ),
             ),
-          ),
-        );
-
-    return Column(
-      children: [
-        option(
-          selected: true,
-          title: 'Cash on delivery',
-          subtitle: 'Pay the courier when your order arrives',
-          trailing: const Icon(Icons.payments_outlined, size: 22, color: AppColors.primaryDark),
+            const Icon(Icons.payments_outlined, size: 22, color: AppColors.primaryDark),
+          ],
         ),
-        const SizedBox(height: 10),
-        option(selected: false, title: 'Credit / debit card', subtitle: 'Not available in this version', trailing: const StatusBadge(label: 'Soon')),
-      ],
+      ),
     );
   }
 }

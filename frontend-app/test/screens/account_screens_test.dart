@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_app/services/auth/dev_account.dart';
 import 'package:frontend_app/widgets/buttons/app_button.dart';
 import 'package:frontend_app/widgets/inputs/category_chip.dart';
 
@@ -117,11 +118,46 @@ void main() {
     expect(find.text('+855 99 000 111'), findsNothing);
   });
 
-  testWidgets('deferred items are marked Soon', (tester) async {
+  testWidgets('change password: checks the fields, rejects a wrong current password, then stays signed in', (tester) async {
     await startSignedIn(tester);
     await openTab(tester, 'Profile');
-    await tester.dragUntilVisible(find.text('Contact us'), find.byType(Scrollable).first, const Offset(0, -200));
-    expect(find.text('Soon'), findsNWidgets(3)); // Settings, About, Contact
+    await tapAboveTabBar(tester, find.text('Change password'));
+    await wait(tester, steps: 2);
+    final fields = find.byType(TextField);
+    final save = find.widgetWithText(AppButton, 'Change password');
+
+    await tester.enterText(fields.at(0), 'not-my-password');
+    await tester.enterText(fields.at(1), 'NewPassw0rd!');
+    await tester.enterText(fields.at(2), 'Different1!');
+    await tester.tap(save);
+    await tester.pump();
+    expect(find.text('Passwords do not match.'), findsOneWidget);
+
+    await tester.enterText(fields.at(2), 'NewPassw0rd!');
+    await tester.tap(save);
+    await wait(tester, steps: 3);
+    expect(find.text('Your current password isn’t right.'), findsOneWidget);
+
+    // After the error the field can still be cleared. No autofill hints means no browser form whose
+    // password manager could refill the fields (on the web).
+    await tester.enterText(fields.at(0), '');
+    await tester.pump();
+    expect(tester.widget<TextField>(fields.at(0)).controller!.text, isEmpty);
+    expect(find.text('Enter your current password.'), findsOneWidget);
+    for (var i = 0; i < 3; i++) {
+      expect(tester.widget<TextField>(fields.at(i)).autofillHints, isNull);
+    }
+
+    await tester.enterText(fields.at(0), devAccountPassword);
+    await tester.tap(save);
+    await wait(tester, steps: 3);
+    expect(find.text('Password changed'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Change password'), findsNothing); // the sheet closed
+
+    // The old tokens were revoked; the new pair keeps this device signed in.
+    await openTab(tester, 'Cart');
+    expect(find.text('Minimal Watch'), findsOneWidget);
+    expect(find.text('Welcome back'), findsNothing);
   });
 
   testWidgets('log out asks first, then returns to sign in', (tester) async {

@@ -135,11 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
         ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(onPressed: () => context.push('/forgot-password'), child: const Text('Forgot password?')),
-        ),
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: AppSpacing.xxl),
         AppButton(label: isLoading ? 'Signing in…' : 'Sign in', isLoading: isLoading, onPressed: _signIn),
         const SizedBox(height: AppSpacing.sm),
         AppButton(label: 'Continue as guest', variant: AppButtonVariant.text, onPressed: isLoading ? null : _continueAsGuest),

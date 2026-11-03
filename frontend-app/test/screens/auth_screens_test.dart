@@ -55,19 +55,4 @@ void main() {
     await wait(tester);
     expect(find.text('Trending now'), findsOneWidget);
   });
-
-  testWidgets('reset password always shows the same confirmation', (tester) async {
-    await startAppAtLogin(tester);
-    await tapVisible(tester, find.text('Forgot password?'));
-    await wait(tester, steps: 3);
-    await tester.tap(find.text('Send instructions'));
-    await tester.pump();
-    expect(find.text('Enter your email address.'), findsOneWidget);
-
-    await tester.enterText(find.byType(TextField), 'someone@example.com');
-    await tester.tap(find.text('Send instructions'));
-    await wait(tester, steps: 3);
-    expect(find.text('Check your email'), findsOneWidget);
-    expect(find.textContaining('someone@example.com'), findsOneWidget);
-  });
 }

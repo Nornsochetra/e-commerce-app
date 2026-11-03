@@ -32,6 +32,8 @@ public enum StatusCode {
       HttpStatus.UNAUTHORIZED, ErrorType.AUTHENTICATION, "Email or password is incorrect"),
   ACCOUNT_DISABLED(HttpStatus.UNAUTHORIZED, ErrorType.AUTHENTICATION, "Account is disabled"),
   EMAIL_ALREADY_REGISTERED(HttpStatus.CONFLICT, ErrorType.CONFLICT, "Email is already registered"),
+  CURRENT_PASSWORD_INCORRECT(
+      HttpStatus.BAD_REQUEST, ErrorType.VALIDATION, "Current password is incorrect"),
   INVALID_REFRESH_TOKEN(
       HttpStatus.UNAUTHORIZED, ErrorType.AUTHENTICATION, "Refresh token is invalid"),
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorType.NOT_FOUND, "User was not found"),

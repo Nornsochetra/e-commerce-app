@@ -106,6 +106,27 @@ void main() {
     expect(expired, 1);
   });
 
+  test('tokens saved while a refresh is running (e.g. a password change) are kept, not overwritten or cleared', () async {
+    const changed = TokenPair(accessToken: 'changed-access', refreshToken: 'changed-refresh');
+    late MemoryTokenStorage storage;
+    final (api, adapter, tokens) = client((r) async {
+      if (r.path == '/auth/refresh') {
+        await storage.save(changed); // the password change finishes first and revokes refresh-1
+        return (401, fail('INVALID_REFRESH_TOKEN'));
+      }
+      return r.headers['Authorization'] == 'Bearer changed-access' ? (200, ok({'items': []})) : (401, fail('INVALID_TOKEN'));
+    });
+    storage = tokens;
+    await tokens.save(signedIn);
+    var expired = 0;
+    api.onSessionExpired = () => expired++;
+
+    expect(await api.get('/cart'), {'items': []}); // retried with the new tokens
+    expect((await tokens.read())!.refreshToken, 'changed-refresh');
+    expect(expired, 0);
+    expect(adapter.requests.last.headers['Authorization'], 'Bearer changed-access');
+  });
+
   test('being offline during a refresh keeps the tokens (nobody is signed out for a bad connection)', () async {
     final (api, _, tokens) = client((r) async {
       if (r.path == '/auth/refresh') throw DioException(requestOptions: r, type: DioExceptionType.connectionTimeout);

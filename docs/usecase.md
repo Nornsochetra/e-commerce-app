@@ -55,7 +55,7 @@ flowchart LR
 | UC-001 | Start application | Guest or authenticated user | User reaches login or home according to session state. |
 | UC-002 | Register | Guest | Account is created and the user is signed in. |
 | UC-003 | Log in | Guest | Valid credentials create an authenticated session. |
-| UC-004 | Request password recovery | Guest | A neutral recovery acknowledgement is displayed. |
+| UC-004 | Change password | Authenticated user | The password is replaced; other devices are signed out. |
 | UC-005 | Browse and search products | Guest or authenticated user | Matching visible products are displayed. |
 | UC-006 | View product details | Guest or authenticated user | Product details and current stock are displayed. |
 | UC-007 | Manage profile | Authenticated user | Current profile is viewed or updated. |
@@ -116,13 +116,17 @@ not assume the user is authenticated.
 **Alternative flows:** Invalid credentials keep the user on Login; a disabled account displays an
 account-disabled message; service failure preserves the email and permits retry.
 
-### UC-004 — Request password recovery
+### UC-004 — Change password
 
-1. The guest opens Forgot password and submits an email.
-2. The system always returns the same acknowledgement whether the account exists or not.
-3. The application displays that acknowledgement.
+1. The user opens Profile and selects Change password.
+2. The user enters the current password, a new password, and its confirmation.
+3. The application validates the fields and submits them.
+4. The system checks the current password, saves the new one, revokes every earlier token, and
+   returns a new token pair for this device.
+5. The application closes the popup and confirms the change.
 
-Recovery delivery and reset completion are deferred until an email provider is selected.
+A wrong current password keeps the popup open with an error on that field. There is no password
+recovery for signed-out users.
 
 ### UC-005 — Browse and search products
 
@@ -232,7 +236,6 @@ flowchart TD
     Splash --> Login
     Splash --> Home
     Login --> Register
-    Login --> ForgotPassword[Forgot password]
     Login --> Home
 
     Home <--> Shop
@@ -250,6 +253,7 @@ flowchart TD
     Checkout --> Confirmation[Order confirmation]
     Confirmation --> OrderHistory[Order history]
     Profile --> EditProfile[Edit profile]
+    Profile --> ChangePassword[Change password]
     Profile --> OrderHistory
     Profile --> Wishlist
     Profile --> Cart

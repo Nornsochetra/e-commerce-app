@@ -29,6 +29,15 @@ The user-profile feature allows an authenticated user to view and update approve
 - Allow the user to save or cancel changes.
 - Editable fields are name, email, and optional phone. Avatar support is deferred.
 
+### 4.3 Change Password
+
+- Opened from the Profile menu, below My orders, as a popup.
+- Fields: current password, new password (8–72 characters, different from the current one), and
+  confirmation.
+- A wrong current password is shown on that field (`CURRENT_PASSWORD_INCORRECT`).
+- Success keeps this device signed in with a new token pair, signs out every other device, and shows
+  "Password changed". Closing with something typed asks before discarding it.
+
 ## 5. Functional Requirements
 
 - PROFILE-FR-001: The application must display the current user's approved profile information.
@@ -45,7 +54,7 @@ The user-profile feature allows an authenticated user to view and update approve
 - Phone is optional, may be cleared, and is limited to 32 characters; international normalization is
   deferred.
 - Changing profile fields does not require re-authentication in v1.
-- Password and role are not profile fields.
+- Password and role are not profile fields; the password changes only through Change password.
 
 ## 7. UI States
 
@@ -84,4 +93,4 @@ The user-profile feature allows an authenticated user to view and update approve
 ## 10. Out of Scope
 
 - Authentication flows
-- Settings, avatar upload, password change, and account deletion
+- Settings, avatar upload, and account deletion

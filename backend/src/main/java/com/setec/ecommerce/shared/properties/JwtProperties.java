@@ -14,4 +14,10 @@ public class JwtProperties {
   private Duration refreshTokenTtl;
   private String publicKey;
   private String privateKey;
+
+  /**
+   * Dev only: folder where a generated keypair is kept when no keys are configured, so tokens
+   * survive a restart. Empty means a throwaway keypair (tests).
+   */
+  private String devKeyDir;
 }

@@ -66,6 +66,7 @@ const _messages = {
   'INVALID_CREDENTIALS': 'That email and password don’t match.',
   'ACCOUNT_DISABLED': 'This account has been disabled. Contact support for help.',
   'EMAIL_ALREADY_REGISTERED': 'An account with this email already exists.',
+  'CURRENT_PASSWORD_INCORRECT': 'Your current password isn’t right.',
   'INVALID_REFRESH_TOKEN': 'Your session has ended. Please sign in again.',
   'USER_NOT_FOUND': 'We couldn’t find your account. Please sign in again.',
   // Catalog

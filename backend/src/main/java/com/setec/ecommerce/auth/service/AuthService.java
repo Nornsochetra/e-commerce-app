@@ -2,6 +2,7 @@ package com.setec.ecommerce.auth.service;
 
 import com.setec.ecommerce.auth.mapper.AuthMapper;
 import com.setec.ecommerce.auth.payload.AuthResponse;
+import com.setec.ecommerce.auth.payload.ChangePasswordRequest;
 import com.setec.ecommerce.auth.payload.CurrentUserResponse;
 import com.setec.ecommerce.auth.payload.ForgotPasswordRequest;
 import com.setec.ecommerce.auth.payload.LoginRequest;
@@ -103,6 +104,23 @@ public class AuthService {
   public void logout() {
     User caller = currentUserResolver.require();
     caller.setTokenVersion(caller.getTokenVersion() + 1);
+  }
+
+  /**
+   * Replaces the caller's password and revokes every token issued before, so other devices are
+   * signed out. The caller keeps working with the new token pair returned here.
+   */
+  @Transactional
+  public TokenResponse changePassword(ChangePasswordRequest request) {
+    User caller = currentUserResolver.require();
+    if (!passwordEncoder.matches(request.currentPassword(), caller.getPasswordHash())) {
+      throw new BusinessException(StatusCode.CURRENT_PASSWORD_INCORRECT);
+    }
+    caller.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+    caller.setTokenVersion(caller.getTokenVersion() + 1);
+    TokenBundle tokens = issueTokens(caller);
+    return authMapper.toTokenResponse(
+        tokens.accessToken(), tokens.refreshToken(), jwtProperties.getAccessTokenTtl().toSeconds());
   }
 
   @Transactional(readOnly = true)

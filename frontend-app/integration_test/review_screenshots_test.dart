@@ -87,16 +87,6 @@ void main() {
     await tester.drag(find.byType(Scrollable).first, const Offset(0, 600));
     await wait(tester, 400);
     await binding.takeScreenshot('s2_06_register_errors');
-
-    await tap(tester, find.byTooltip('Back to sign in'));
-    await wait(tester, 800);
-    await tap(tester, find.text('Forgot password?'));
-    await wait(tester, 800);
-    await binding.takeScreenshot('s2_07_forgot');
-    await tester.enterText(find.byType(TextField), 'someone@example.com');
-    await tap(tester, find.text('Send instructions'));
-    await wait(tester, 900);
-    await binding.takeScreenshot('s2_08_forgot_sent');
   });
 
   testWidgets('slice 3: home, categories and product details', (tester) async {

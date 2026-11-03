@@ -18,10 +18,11 @@ import '../../widgets/feedback/loading_skeleton.dart';
 import '../../widgets/feedback/status_badge.dart';
 import '../../widgets/layout/app_header.dart';
 import '../../utils/on_screen.dart';
+import 'widgets/change_password_sheet.dart';
 import 'widgets/edit_profile_sheet.dart';
 
 /// SCR-005/006 Profile: details with an Edit sheet, order / wishlist / cart counts, shopping links,
-/// deferred items marked "Soon", and Log out (confirmed first).
+/// a Change password sheet, and Log out (confirmed first).
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
@@ -30,6 +31,11 @@ class ProfileScreen extends StatelessWidget {
     if (user == null) return;
     final saved = await showEditProfileSheet(context, user);
     if (saved && context.mounted) showAppToast(context, 'Profile updated');
+  }
+
+  Future<void> _changePassword(BuildContext context) async {
+    final changed = await showChangePasswordSheet(context);
+    if (changed && context.mounted) showAppToast(context, 'Password changed');
   }
 
   Future<void> _logOut(BuildContext context) async {
@@ -131,6 +137,7 @@ class ProfileScreen extends StatelessWidget {
           const _Label('Shopping'),
           _Menu(rows: [
             _MenuRow(icon: Icons.inventory_2_outlined, title: 'My orders', subtitle: active > 0 ? '$active in progress' : 'Track and review orders', onTap: () => context.push('/orders')),
+            _MenuRow(icon: Icons.lock_outline_rounded, title: 'Change password', subtitle: 'Update the password you sign in with', onTap: () => _changePassword(context)),
             _MenuRow(
               icon: Icons.notifications_none_rounded,
               title: 'Notifications',
@@ -139,13 +146,6 @@ class ProfileScreen extends StatelessWidget {
               onTap: () => context.go('/notifications'),
             ),
             _MenuRow(icon: Icons.favorite_border_rounded, title: 'Wishlist', subtitle: 'Products you saved', onTap: () => context.go('/wishlist')),
-          ]),
-
-          const _Label('More'),
-          _Menu(rows: [
-            const _MenuRow(icon: Icons.settings_outlined, title: 'Settings', neutral: true),
-            const _MenuRow(icon: Icons.help_outline_rounded, title: 'About APM', neutral: true),
-            const _MenuRow(icon: Icons.call_outlined, title: 'Contact us', neutral: true),
           ]),
 
           const SizedBox(height: AppSpacing.xxl),
@@ -224,24 +224,20 @@ class _Menu extends StatelessWidget {
       );
 }
 
-/// Menu row: icon tile, title and subtitle, optional badge, chevron. Without [onTap] it is shown as "Soon".
+/// Menu row: icon tile, title and subtitle, optional badge, chevron.
 class _MenuRow extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? subtitle;
   final String? badge;
-  final bool neutral; // grey icon tile
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
 
-  const _MenuRow({required this.icon, required this.title, this.subtitle, this.badge, this.neutral = false, this.onTap});
+  const _MenuRow({required this.icon, required this.title, this.subtitle, this.badge, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final soon = onTap == null;
     return Semantics(
-      button: !soon,
-      enabled: !soon,
-      label: soon ? '$title, coming soon' : null,
+      button: true,
       child: InkWell(
         onTap: onTap,
         child: ConstrainedBox(
@@ -253,25 +249,21 @@ class _MenuRow extends StatelessWidget {
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(color: neutral ? AppColors.field : AppColors.mintSoft, borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
-                  child: Icon(icon, size: 20, color: neutral ? const Color(0xFF475569) : AppColors.primaryDark),
+                  decoration: BoxDecoration(color: AppColors.mintSoft, borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+                  child: Icon(icon, size: 20, color: AppColors.primaryDark),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: AppText.head.copyWith(color: soon ? AppColors.textMuted : AppColors.text)),
+                      Text(title, style: AppText.head),
                       if (subtitle != null) Text(subtitle!, style: AppText.meta),
                     ],
                   ),
                 ),
-                if (soon)
-                  const StatusBadge(label: 'Soon')
-                else ...[
-                  if (badge != null) ...[StatusBadge(label: badge!, tone: BadgeTone.success), const SizedBox(width: AppSpacing.sm)],
-                  const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.textFaint),
-                ],
+                if (badge != null) ...[StatusBadge(label: badge!, tone: BadgeTone.success), const SizedBox(width: AppSpacing.sm)],
+                const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.textFaint),
               ],
             ),
           ),

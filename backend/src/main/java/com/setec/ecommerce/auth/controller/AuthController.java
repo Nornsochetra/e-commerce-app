@@ -1,6 +1,7 @@
 package com.setec.ecommerce.auth.controller;
 
 import com.setec.ecommerce.auth.payload.AuthResponse;
+import com.setec.ecommerce.auth.payload.ChangePasswordRequest;
 import com.setec.ecommerce.auth.payload.CurrentUserResponse;
 import com.setec.ecommerce.auth.payload.ForgotPasswordRequest;
 import com.setec.ecommerce.auth.payload.LoginRequest;
@@ -75,6 +76,15 @@ public class AuthController extends BaseController {
   public ResponseEntity<ApiResponse<EmptyJsonResponse>> logout() {
     authService.logout();
     return noContent();
+  }
+
+  @PostMapping("/change-password")
+  @ApiId("AUT-0206")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Change the current user's password")
+  public ResponseEntity<ApiResponse<TokenResponse>> changePassword(
+      @Valid @RequestBody ChangePasswordRequest request) {
+    return ok(authService.changePassword(request));
   }
 
   @GetMapping("/me")

@@ -28,7 +28,7 @@ cp .env.example .env                                      # once: set DATABASE_P
 ./gradlew bootRun                                         # needs PostgreSQL; reads backend/.env
 ```
 
-Config comes from env vars or `backend/.env` (git-ignored, imported via `spring.config.import`; real env vars win) — see `backend/.env.example`: `SPRING_PROFILES_ACTIVE`, `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`; also `RSA_PUBLIC_KEY`/`RSA_PRIVATE_KEY`, `CORS_ALLOWED_ORIGINS`, `SERVER_PORT`). The `dev` profile (default) falls back to `postgresql://localhost:5432/e-commerce`. Swagger UI is at `/swagger-ui.html`.
+Config comes from env vars or `backend/.env` (git-ignored, imported via `spring.config.import`; real env vars win) — see `backend/.env.example`: `SPRING_PROFILES_ACTIVE`, `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`; also `RSA_PUBLIC_KEY`/`RSA_PRIVATE_KEY`, `CORS_ALLOWED_ORIGINS`, `SERVER_PORT`). The `dev` profile (default) falls back to `postgresql://localhost:5432/e-commerce` and, without `RSA_*` keys, keeps a generated signing keypair in git-ignored `backend/.dev-keys/` so tokens survive restarts (tests still use a throwaway pair). Swagger UI is at `/swagger-ui.html`.
 
 ## Frontend commands
 
@@ -123,5 +123,5 @@ How the API is used (details in each provider):
 ## Gotchas
 
 - `docs/backend/backend-patterns.md` and the blueprint name the base package `com.mercato.api` and artifact `mercato-api`; the actual code uses `com.setec.ecommerce` and `ecommerce-api`. Follow the code.
-- Deferred in v1 (do not build): Settings/About/Contact screens, password-reset completion and email delivery, card payments, push notifications, guest cart/wishlist merging, order cancellation/returns, tax and discounts. The prototype shows some of these as "Coming soon" or disabled.
+- Deferred in v1 (do not build): Settings/About/Contact screens, password reset for signed-out users and email delivery (there is no forgot-password screen; signed-in users change their password from Profile via `POST /auth/change-password`), card payments, push notifications, guest cart/wishlist merging, order cancellation/returns, tax and discounts. The prototype shows some of these as "Coming soon" or disabled.
 - The prototype lets guests add to cart/wishlist; the requirements say cart, wishlist, checkout, orders, profile and notifications require sign-in. Implement the requirement in Flutter.

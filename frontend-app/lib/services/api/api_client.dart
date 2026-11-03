@@ -121,11 +121,17 @@ class ApiClient {
     if (current == null) return false;
     try {
       final (data, _) = await _request('POST', '/auth/refresh', body: {'refreshToken': current.refreshToken});
+      if (await _replacedSince(current)) return await tokens.read() != null;
       await tokens.save(TokenPair.fromJson(data as Map<String, dynamic>));
       return true;
     } on ApiException catch (e) {
       if (e.isConnectionProblem) rethrow;
-      return false;
+      // A password change or new sign-in during the refresh revokes the old refresh token but leaves
+      // newer tokens here: keep those instead of signing out.
+      return await _replacedSince(current) && await tokens.read() != null;
     }
   }
+
+  /// True when login, register, change password or logout replaced [before] while a refresh ran.
+  Future<bool> _replacedSince(TokenPair before) async => (await tokens.read())?.refreshToken != before.refreshToken;
 }

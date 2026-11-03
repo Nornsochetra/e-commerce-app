@@ -64,7 +64,7 @@ void main() {
     await wait(tester);
     expect(find.text('Alex Morgan'), findsOneWidget); // prefilled delivery card
     expect(find.text('Cash on delivery'), findsOneWidget);
-    expect(find.text('Soon'), findsOneWidget);
+    expect(find.text('Credit / debit card'), findsNothing);
 
     await tester.tap(find.text('Edit'));
     await tester.pump();
