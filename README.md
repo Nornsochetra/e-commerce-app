@@ -7,7 +7,7 @@ a wishlist, place cash-on-delivery orders and follow them through notifications.
 |---|---|
 | [`backend/`](backend/) | REST API: Spring Boot 4, Java 21, PostgreSQL (schema by Flyway), JWT sign-in |
 | [`frontend-app/`](frontend-app/) | Flutter app for Android and iOS phones (Provider + go_router), connected to the API |
-| [`docs/`](docs/) | Requirements, use cases, feature specs, API specification, data model, and the clickable HTML prototype |
+| [`docs/`](docs/README.md) | Requirements, use cases, feature specs, API specification, data model with ERD, and the clickable HTML prototype |
 
 ## Requirements
 

@@ -1,24 +1,7 @@
----
-spec: SPEC-BACKEND-STRUCTURE
-title: Backend Patterns
-status: approved-for-init
-owner: Backend
-depends_on: [SPEC-API-CONVENTIONS, SPEC-API, SPEC-DATA-MODEL]
-last_updated: 2026-08-27
----
-
 # Backend patterns
 
 Project-specific package structure, dependency rules, and implementation patterns for the APM
 e-commerce backend.
-
-Companion documents:
-
-- [Backend initialization blueprint](backend-init-blueprint.md)
-- [API conventions](../api-convention.md)
-- [API specification](../api-specification.md)
-- [Data model](../data-model.md)
-- [Use cases](../usecase.md)
 
 ## 1. Backend baseline
 
@@ -91,7 +74,7 @@ Each feature slice normally contains:
 | `order` | `ORD` | `/api/v1/orders` |
 | `notification` | `NTF` | `/api/v1/notifications` |
 
-The ApiId number class is fixed by [API conventions](../api-convention.md#31-apiid-format).
+The ApiId number class is fixed by [API conventions](api.md#31-apiid-format).
 
 ## 3. Placement and dependency rules
 
@@ -232,7 +215,7 @@ src/main/resources/
 ```
 
 Applied migrations are immutable. Add a new migration for every later schema change and update
-[data-model.md](../data-model.md) in the same change.
+[data-model.md](database.md) in the same change.
 
 ## 8. Testing pattern
 

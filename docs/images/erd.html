@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<!-- APM entity relationship diagram (source of erd.png). Columns follow the Flyway migrations V1–V8;
+     created_at/updated_at are left out. Regenerate erd.png with headless Chrome at 2090x790. -->
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; background: #FFFFFF; }
+  body { width: 2090px; height: 790px; position: relative; font-family: "Helvetica Neue", Arial, sans-serif; }
+  .t { position: absolute; width: 350px; border: 2px solid #065F46; border-radius: 14px; overflow: hidden; background: #FFFFFF; box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
+  .h { height: 40px; line-height: 40px; padding: 0 16px; background: #065F46; color: #FFFFFF; font: 700 22px Menlo, monospace; }
+  .r { height: 28px; line-height: 28px; padding: 0 12px; display: flex; gap: 8px; font-size: 18px; color: #18181B; border-top: 1px solid #ECEEEA; }
+  .r:nth-child(odd) { background: #F7FAF8; }
+  .k { width: 34px; flex: none; font: 700 14px Menlo, monospace; color: #A1A1AA; }
+  .k.pk { color: #B45309; }
+  .k.fk { color: #047857; }
+  .n { flex: 1; font-family: Menlo, monospace; font-size: 17px; }
+  .n.pk { font-weight: 700; }
+  .ty { color: #71717A; font-size: 15px; font-family: Menlo, monospace; }
+  .note { position: absolute; left: 30px; bottom: 6px; margin: 0; font-size: 18px; color: #71717A; }
+  svg { position: absolute; left: 0; top: 0; }
+</style>
+</head>
+<body>
+<svg id="lines" width="2090" height="790"></svg>
+<div id="tables"></div>
+<p class="note">PK primary key · FK foreign key · every table also has created_at (and most updated_at), left out here · crow’s foot = many, double bar = exactly one</p>
+<script>
+const T = {
+  users:          {x: 30,   y: 30,  cols: [['PK','id','bigserial'],['','uuid','uuid'],['','email','varchar'],['','password_hash','varchar'],['','name','varchar'],['','phone','varchar'],['','role','varchar'],['','is_active','boolean'],['','token_version','bigint'],['','last_login_at','timestamptz']]},
+  carts:          {x: 450,  y: 570,  cols: [['PK','id','bigserial'],['','uuid','uuid'],['FK','user_id','bigint · unique']]},
+  orders:         {x: 450,  y: 30, cols: [['PK','id','bigserial'],['','uuid','uuid'],['','reference','varchar'],['FK','user_id','bigint'],['','status','varchar'],['','recipient_name','varchar'],['','delivery_email','varchar'],['','delivery_address','text'],['','delivery_method','varchar'],['','payment_method','varchar'],['','subtotal','numeric'],['','delivery_fee','numeric'],['','total','numeric'],['','currency','char(3)'],['','idempotency_key','varchar']]},
+  notifications:  {x: 30,  y: 420, cols: [['PK','id','bigserial'],['','uuid','uuid'],['FK','user_id','bigint'],['','type','varchar'],['','title','varchar'],['','message','text'],['','read_at','timestamptz'],['','cleared_at','timestamptz']]},
+  cart_items:     {x: 870, y: 420,  cols: [['PK','id','bigserial'],['','uuid','uuid'],['FK','cart_id','bigint'],['FK','product_id','bigint'],['','quantity','integer']]},
+  order_items:    {x: 870, y: 30, cols: [['PK','id','bigserial'],['FK','order_id','bigint'],['FK','product_id','bigint · null'],['','product_uuid','uuid'],['','product_name','varchar'],['','image_url','varchar'],['','quantity','integer'],['','unit_price','numeric'],['','line_total','numeric'],['','currency','char(3)']]},
+  wishlist_items: {x: 1290, y: 520, cols: [['PK','id','bigserial'],['FK','user_id','bigint'],['FK','product_id','bigint']]},
+  products:       {x: 1290, y: 30,  cols: [['PK','id','bigserial'],['','uuid','uuid'],['FK','category_id','bigint'],['','name','varchar'],['','description','text'],['','price','numeric'],['','currency','char(3)'],['','available_quantity','integer'],['','rating','numeric'],['','image_url','varchar'],['','is_featured','boolean'],['','featured_rank','integer'],['','is_active','boolean']]},
+  categories:     {x: 1710, y: 30,  cols: [['PK','id','bigserial'],['','uuid','uuid'],['','name','varchar'],['','slug','varchar · unique'],['','is_active','boolean']]},
+  product_badges: {x: 1710, y: 290, cols: [['PK','id','bigserial'],['FK','product_id','bigint'],['','badge','varchar']]},
+};
+const host = document.getElementById('tables');
+for (const [name, t] of Object.entries(T)) {
+  const el = document.createElement('div');
+  el.className = 't'; el.style.left = t.x + 'px'; el.style.top = t.y + 'px';
+  el.innerHTML = '<div class="h">' + name + '</div>' + t.cols.map(([k, n, ty]) =>
+    '<div class="r"><span class="k ' + k.toLowerCase() + '">' + k + '</span><span class="n ' + k.toLowerCase() + '">' + n + '</span><span class="ty">' + ty + '</span></div>').join('');
+  host.appendChild(el);
+}
+// y of a column's row centre, and the table's left/right edges (2px border, 40px header, 29px rows)
+const rowY = (t, col) => T[t].y + 2 + 40 + T[t].cols.findIndex(c => c[1] === col) * 29 + 14;
+const L = t => T[t].x, R = t => T[t].x + 354;
+const svg = document.getElementById('lines');
+const ns = 'http://www.w3.org/2000/svg';
+function path(d) { const p = document.createElementNS(ns, 'path'); p.setAttribute('d', d); p.setAttribute('fill', 'none'); p.setAttribute('stroke', '#64748B'); p.setAttribute('stroke-width', '2.5'); svg.appendChild(p); }
+// markers at a table edge x,y; dir points away from the table, along the line
+function many(x, y, dir) { path(`M${x + dir * 16} ${y} L${x} ${y - 10} M${x + dir * 16} ${y} L${x} ${y} M${x + dir * 16} ${y} L${x} ${y + 10} M${x + dir * 24} ${y - 10} V${y + 10}`); }
+function one(x, y, dir) { path(`M${x + dir * 10} ${y - 10} V${y + 10} M${x + dir * 18} ${y - 10} V${y + 10}`); }
+// child (FK) → parent (PK) through a vertical channel at x = ch; side 'L' or 'R' = which edge the line leaves from
+function rel(child, fk, cs, parent, ps, ch, oneToOne) {
+  const cy = rowY(child, fk), py = rowY(parent, 'id');
+  const cx = cs === 'L' ? L(child) : R(child), px = ps === 'L' ? L(parent) : R(parent);
+  path(`M${cx} ${cy} H${ch} V${py} H${px}`);
+  if (oneToOne) one(cx, cy, cs === 'L' ? -1 : 1); else many(cx, cy, cs === 'L' ? -1 : 1);
+  one(px, py, ps === 'L' ? -1 : 1);
+}
+rel('carts', 'user_id', 'L', 'users', 'R', 410, true);
+rel('orders', 'user_id', 'L', 'users', 'R', 425);
+rel('notifications', 'user_id', 'R', 'users', 'R', 395);
+rel('cart_items', 'cart_id', 'L', 'carts', 'R', 830);
+rel('order_items', 'order_id', 'L', 'orders', 'R', 845);
+rel('cart_items', 'product_id', 'R', 'products', 'L', 1255);
+rel('order_items', 'product_id', 'R', 'products', 'L', 1240);
+rel('wishlist_items', 'product_id', 'R', 'products', 'R', 1660);
+rel('products', 'category_id', 'R', 'categories', 'L', 1690);
+rel('product_badges', 'product_id', 'L', 'products', 'R', 1675);
+// wishlist_items.user_id → users.id runs along the bottom, under the middle columns
+{ const cy = rowY('wishlist_items', 'user_id'), py = rowY('users', 'id');
+  path(`M${L('wishlist_items')} ${cy} H1270 V745 H440 V${py} H${R('users')}`);
+  many(L('wishlist_items'), cy, -1); one(R('users'), py, 1); }
+</script>
+</body>
+</html>

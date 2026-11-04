@@ -1,4 +1,4 @@
-/// One page of a paginated list (`Pagination<T>` in docs/api-convention.md §7).
+/// One page of a paginated list (`Pagination<T>` in docs/api.md, API conventions §7).
 /// Pages are zero-based; use [nextPage] to load more while [hasNext] is true.
 class PageResult<T> {
   final List<T> items;

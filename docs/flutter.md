@@ -1,6 +1,6 @@
 # Flutter app structure
 
-How the APM (All Products Marketplace) Flutter app in `frontend-app/` is organised. The screens are built from the approved HTML prototype in [`docs/prototype/`](../prototype/README.md).
+How the APM (All Products Marketplace) Flutter app in `frontend-app/` is organised. The screens are built from the approved HTML prototype in [`docs/prototype/`](prototype/README.md).
 
 ## 1. Decisions
 
@@ -14,7 +14,7 @@ How the APM (All Products Marketplace) Flutter app in `frontend-app/` is organis
 | Images | Product photos come from the API, so they stay as URLs. Images the API never sends are bundled in `assets/`: Home banner photos, the APM logo, category icons and the image placeholder. |
 | Vector images | SVG files shown with [`flutter_svg`](https://pub.dev/packages/flutter_svg); other UI icons use Flutter's built-in Material icons |
 | API | [`dio`](https://pub.dev/packages/dio) through one shared `ApiClient` (`services/api/`). Tokens in [`flutter_secure_storage`](https://pub.dev/packages/flutter_secure_storage). Screens show `ApiException.userMessage`, never the server's `message`. |
-| Sign-in | Email + password only (JWT from the backend) — no Google/Apple sign-in. Guests can browse and search. Cart, wishlist, checkout, orders, profile and notifications require sign-in (see [requirement.md §7.2](../requirement.md)). |
+| Sign-in | Email + password only (JWT from the backend) — no Google/Apple sign-in. Guests can browse and search. Cart, wishlist, checkout, orders, profile and notifications require sign-in (see [requirement.md §7.2](requirements.md#project-requirements)). |
 | Test device | iOS simulator (iPhone 16) |
 
 ## 2. Folder structure

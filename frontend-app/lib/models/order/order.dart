@@ -4,7 +4,7 @@ import 'order_item.dart';
 /// Order status flow: pending → confirmed → shipped → delivered.
 enum OrderStatus { pending, confirmed, shipped, delivered }
 
-/// A placed order with its lines, delivery details and amounts (`OrderDetail`, docs/api-specification.md §4.9).
+/// A placed order with its lines, delivery details and amounts (`OrderDetail`, docs/api.md, API specification §4.9).
 /// Order history only lists [OrderSummary]s; the full order is read per order.
 class Order {
   final String id;
@@ -64,7 +64,7 @@ class Order {
   OrderSummary toSummary() => OrderSummary(id: id, reference: reference, status: status, itemCount: itemCount, total: total, createdAt: createdAt);
 }
 
-/// One row of order history (`OrderSummary`, docs/api-specification.md §4.10). It has no item lines.
+/// One row of order history (`OrderSummary`, docs/api.md, API specification §4.10). It has no item lines.
 class OrderSummary {
   final String id;
   final String reference;

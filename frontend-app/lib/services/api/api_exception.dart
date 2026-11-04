@@ -1,4 +1,4 @@
-/// A failed API call. [code] is the backend's stable error code (docs/api-convention.md §2),
+/// A failed API call. [code] is the backend's stable error code (docs/api.md, API conventions §2),
 /// or [ApiException.network] / [ApiException.timeout] when the server couldn't be reached.
 ///
 /// Screens show [userMessage]. The server's own `message` is for developers only and is kept in
@@ -48,7 +48,7 @@ class FieldError {
   const FieldError({required this.field, required this.message});
 }
 
-/// User-facing text for every error code the API can return (docs/api-convention.md §2.1–2.2).
+/// User-facing text for every error code the API can return (docs/api.md, API conventions §2.1–2.2).
 const _messages = {
   ApiException.network: 'Can’t reach APM. Check your connection and try again.',
   ApiException.timeout: 'APM is taking too long to answer. Please try again.',

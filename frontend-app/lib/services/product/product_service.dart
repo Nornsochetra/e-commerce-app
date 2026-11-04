@@ -41,7 +41,7 @@ class ProductService {
   /// One product with its description and current stock.
   Future<Product> getProduct(String id) async => Product.fromJson(await _api.get('/products/$id') as Map<String, dynamic>);
 
-  /// The API's sort values (docs/api-specification.md §3.4).
+  /// The API's sort values (docs/api.md, API specification §3.4).
   static String _sortParam(ProductSort sort) => switch (sort) {
         ProductSort.featured => 'featured,asc',
         ProductSort.priceLow => 'price,asc',

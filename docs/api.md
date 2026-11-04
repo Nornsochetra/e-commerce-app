@@ -1,25 +1,276 @@
----
-spec: SPEC-API
-title: API Specification
-status: draft
-owner: Backend
-depends_on: [SPEC-API-CONVENTIONS, SPEC-DATA-MODEL]
-last_updated: 2026-08-27
----
+# API
 
-# API specification
+Part 1 has the rules every endpoint follows; part 2 lists every endpoint, keyed by its ApiId.
+
+- [API conventions](#api-conventions)
+- [API specification](#api-specification)
+
+## API conventions
+
+Cross-cutting rules for every endpoint in the e-commerce API. Feature contracts inherit these rules
+and must not redefine them locally.
+
+Base path: `/api/v1`.
+
+> **Status:** This is a draft contract derived from the approved feature requirements and the
+> documentation pattern in `docs-example`. Decisions marked **TBD** require product or backend
+> approval before production implementation.
+
+### 1. Response envelope
+
+Every JSON response, successful or failed, uses `ApiResponse<T>`.
+
+```json
+{
+  "status": { "code": "SUCCESS", "message": "Success" },
+  "data": {},
+  "common": {
+    "requestId": "0f2c9e14-6b8a-4d31-9f77-2c1e5a90b4d3",
+    "apiId": "CAT-0601",
+    "timestamp": "2026-08-24T04:12:00Z"
+  }
+}
+```
+
+- `data` is omitted on failure.
+- `error` is omitted on success.
+- `common.requestId` identifies one request across responses and logs.
+- `common.apiId` is the endpoint identifier defined in the API specification.
+- Raw files and images may bypass the envelope only when their endpoint explicitly documents it.
+
+#### 1.1 Success statuses
+
+| HTTP | `status.code` | Use |
+|---|---|---|
+| 200 | `SUCCESS` | Reads, updates, completed actions, and empty `{}` responses. |
+| 201 | `CREATED` | A newly addressable resource. Return the created resource. |
+| 202 | `ACCEPTED` | Only persisted asynchronous work with a pollable job resource. |
+
+An empty successful response is HTTP 200 with `data: {}`, not HTTP 204, so the client always receives
+the same parseable envelope.
+
+#### 1.2 The 202 rule
+
+A 202 response is permitted only when all three conditions are true:
+
+1. The work is persisted as a job before the response is returned.
+2. The response contains that job in its current state.
+3. A documented `GET` endpoint lets the client poll the job.
+
+| ApiId | Endpoint | Job resource | Poll endpoint |
+|---|---|---|---|
+| _(none)_ | | | |
+
+### 2. Errors
+
+Failures use one stable machine-readable code. The frontend resolves user-facing copy from that code;
+`status.message` and `error.message` are developer-facing English and must not be shown directly.
+
+```json
+{
+  "status": { "code": "PRODUCT_NOT_FOUND", "message": "Product was not found" },
+  "common": {
+    "requestId": "0f2c9e14-6b8a-4d31-9f77-2c1e5a90b4d3",
+    "apiId": "CAT-0601",
+    "timestamp": "2026-08-24T04:12:00Z"
+  },
+  "error": {
+    "code": "PRODUCT_NOT_FOUND",
+    "type": "NOT_FOUND",
+    "message": "Product was not found"
+  }
+}
+```
+
+Allowed `error.type` values are:
+
+`NONE · VALIDATION · AUTHENTICATION · AUTHORIZATION · NOT_FOUND · CONFLICT · SYSTEM`
+
+Validation failures include one detail per rejected field. Rejected values for fields containing
+`password`, `secret`, or `token` must never be returned.
+
+```json
+{
+  "status": { "code": "VALIDATION_ERROR", "message": "Validation failed" },
+  "common": { "requestId": "0f2c…", "apiId": "CRT-0401", "timestamp": "2026-08-24T04:12:00Z" },
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "type": "VALIDATION",
+    "message": "Validation failed",
+    "details": [
+      { "field": "quantity", "message": "Quantity must be at least 1", "rejectedValue": 0 }
+    ]
+  }
+}
+```
+
+#### 2.1 Universal codes
+
+| Code | HTTP | `ErrorType` |
+|---|---:|---|
+| `SUCCESS` · `CREATED` · `ACCEPTED` | 200 · 201 · 202 | `NONE` |
+| `INVALID_REQUEST` · `VALIDATION_ERROR` | 400 | `VALIDATION` |
+| `UNAUTHORIZED` · `INVALID_TOKEN` | 401 | `AUTHENTICATION` |
+| `FORBIDDEN` | 403 | `AUTHORIZATION` |
+| `NOT_FOUND` | 404 | `NOT_FOUND` |
+| `METHOD_NOT_ALLOWED` | 405 | `VALIDATION` |
+| `NOT_ACCEPTABLE` | 406 | `VALIDATION` |
+| `DUPLICATE` · `CONFLICT` | 409 | `CONFLICT` |
+| `PAYLOAD_TOO_LARGE` | 413 | `VALIDATION` |
+| `UNSUPPORTED_MEDIA_TYPE` | 415 | `VALIDATION` |
+| `INTERNAL_ERROR` | 500 | `SYSTEM` |
+
+#### 2.2 Domain codes
+
+Domain codes are added here when the corresponding endpoint contract is approved.
+
+| Area | Codes currently reserved |
+|---|---|
+| `AUT` | `INVALID_CREDENTIALS`, `ACCOUNT_DISABLED`, `EMAIL_ALREADY_REGISTERED`, `INVALID_REFRESH_TOKEN` |
+| `USR` | `USER_NOT_FOUND`, `EMAIL_ALREADY_REGISTERED` |
+| `CAT` | `PRODUCT_NOT_FOUND`, `CATEGORY_NOT_FOUND` |
+| `CRT` | `CART_NOT_FOUND`, `CART_ITEM_NOT_FOUND`, `PRODUCT_OUT_OF_STOCK`, `INSUFFICIENT_STOCK` |
+| `WSH` | `WISHLIST_ITEM_NOT_FOUND` |
+| `ORD` | `ORDER_NOT_FOUND`, `CART_EMPTY`, `CHECKOUT_INVALID`, `INSUFFICIENT_STOCK` |
+| `NTF` | `NOTIFICATION_NOT_FOUND` |
+
+For user-owned resources, “does not exist” and “belongs to another user” return the same `*_NOT_FOUND`
+code. A 403 would reveal that another user’s resource exists.
+
+### 3. URLs and endpoint naming
+
+- Paths are lowercase, plural nouns, and kebab-case where more than one word is required.
+- Paths contain resources, not verbs: `POST /orders`, not `POST /createOrder`.
+- Resource identifiers are UUIDs, never internal numeric primary keys.
+- The authenticated user is represented by `/me`; clients never submit their own user id.
+- Child resources nest when the parent defines ownership: `/cart/items/{itemId}`.
+- Actions that are not CRUD use a final verb: `/auth/refresh`, `/auth/logout`.
+- Every path in [api-specification.md](#api-specification) is relative to `/api/v1`.
+
+#### 3.1 ApiId format
+
+Every endpoint has a stable `ApiId` in the form `<AREA>-<NNNN>`.
+
+| Number class | Operation |
+|---|---|
+| `01xx` | List |
+| `02xx` | Create or action |
+| `03xx` | Replace (`PUT`) |
+| `04xx` | Partial update (`PATCH`) |
+| `05xx` | Delete or remove |
+| `06xx` | Get one |
+| `07xx` | Stream |
+
+Area codes: `HLT` health · `AUT` authentication · `USR` profile · `CAT` catalog · `CRT` cart ·
+`WSH` wishlist · `ORD` orders · `NTF` notifications.
+
+### 4. Requests
+
+- JSON field names use `camelCase`; database names use `snake_case`.
+- `Content-Type: application/json` is required for JSON bodies.
+- Unknown request fields are ignored during the draft phase; changing this to strict rejection is TBD.
+- Server-owned fields such as ids, totals, status, and timestamps are absent from create/update bodies.
+- `PATCH` is partial: omitted or `null` means “leave unchanged”; an empty string means “clear” only
+  for fields whose contract allows clearing.
+- Request validation happens at the boundary and reports all field errors together.
+- The authenticated caller comes from the access token, never from a `userId` body/query field.
+
+### 5. Authentication and authorization
+
+- Protected endpoints use `Authorization: Bearer <access-token>`.
+- Login, registration, password-recovery request, token refresh, health, and catalog reads are public.
+- Profile, cart, wishlist, order, and logout endpoints require authentication.
+- An access token and refresh token are different credentials; a refresh token must never authorize a
+  normal API request.
+- `INVALID_CREDENTIALS` does not reveal whether the email or password was wrong.
+- Passwords contain at least 8 characters. Access tokens last 15 minutes and refresh tokens last 7
+  days. Refreshing issues a new pair without invalidating earlier unexpired refresh tokens. Logout
+  requires only the access token and revokes every previously issued token for the account.
+- Registration creates a session immediately. Email verification is deferred.
+- Cart and wishlist require authentication; guest persistence and merging are deferred.
+
+### 6. Enumerated values
+
+Wire values are lowercase `snake_case`. Stored values may use `UPPER_SNAKE`, with translation in one
+shared serialization layer.
+
+| Enum | Draft wire values | Ownership |
+|---|---|---|
+| Order status | `pending` · `confirmed` · `shipped` · `delivered` | Server-written, forward-only in v1. |
+| Payment method | `cash_on_delivery` | V1 production method; card is prototype-only. |
+| Notification type | `order` · `offer` · `stock` | Server-written. |
+| Product availability | Derived from `availableQuantity` | Not stored as a second status. |
+
+A display label is not a wire value. Localized strings such as “Cash on delivery” belong to the
+client’s message catalogue.
+
+### 7. Pagination, filtering, and sorting
+
+Unbounded lists return `Pagination<T>` in `data`:
+
+```json
+{
+  "items": [],
+  "page": 0,
+  "size": 20,
+  "totalElements": 0,
+  "totalPages": 0,
+  "hasNext": false
+}
+```
+
+- `page` is zero-based; default `size` is 20 and maximum is 100.
+- Sorting uses `?sort=field,asc|desc` and only documented fields are accepted.
+- Filters use explicit query parameters, for example `?categoryId=<uuid>&inStock=true`.
+- Every paginated sort has a unique final tie-breaker, normally `id` descending.
+- Product results, wishlist items, order history, and notifications are paginated. Categories and
+  current cart items are unpaginated because they are rendered as one bounded client view.
+- Totals and summaries are computed over the full matching set, never only the current page.
+
+### 8. Date, time, money, and identifiers
+
+| Value | Wire format |
+|---|---|
+| Timestamp | UTC ISO 8601, for example `2026-08-24T04:12:00Z` |
+| Date without time | ISO 8601 `YYYY-MM-DD` |
+| Money | Decimal JSON string with currency, for example `{ "amount": "89.00", "currency": "USD" }` |
+| Public id | UUID string |
+
+Money is never a floating-point value. V1 uses USD; multi-currency is deferred.
+
+### 9. Idempotency and concurrency
+
+- `GET`, `PUT`, and `DELETE` are idempotent by HTTP semantics.
+- Order creation accepts `Idempotency-Key` so a retry cannot place the same order twice.
+- The server validates stock again inside the order transaction; cart validation alone is not enough.
+- Inventory reservation and optimistic locking are deferred. An order keeps its idempotency key for
+  the life of the order; a compatible replay returns the original result and a different payload
+  using the same key returns `CONFLICT`.
+
+### 10. Contract checklist
+
+- [ ] Unique ApiId in the correct number class.
+- [ ] Authentication requirement stated.
+- [ ] Request and full envelope response shown.
+- [ ] Success status and every possible error code listed.
+- [ ] Nullable, omitted, derived, and server-owned fields explained.
+- [ ] Pagination/filter/sort behavior stated for list endpoints.
+- [ ] Data-model fields and constraints match [data-model.md](database.md).
+- [ ] No unresolved decision is presented as approved behavior.
+
+## API specification
 
 Endpoint contracts for the current e-commerce scope. Cross-cutting behavior—response envelopes,
 errors, authentication, enum spelling, pagination, money, and timestamps—is defined in
-[API conventions](api-convention.md). Database fields and ownership rules are defined in
-[Data model](data-model.md).
+[API conventions](#api-conventions). Database fields and ownership rules are defined in
+[Data model](database.md).
 
 > **Implementation boundary:** The backend currently implements `HLT`, `AUT`, `USR`, `CAT`, `CRT`,
 > `WSH`, `ORD`, and `NTF`, together with shared envelope/security behavior.
 
 Every path is relative to `/api/v1`. Every endpoint has a stable `<AREA>-<NNNN>` ApiId.
 
-## 1. Envelope examples
+### 1. Envelope examples
 
 Success (`error` absent):
 
@@ -45,7 +296,7 @@ Failure (`data` absent):
 }
 ```
 
-## 2. Feature areas
+### 2. Feature areas
 
 | Area | Feature | Client surface | Contract status |
 |---|---|---|---|
@@ -62,9 +313,9 @@ The current security allow-list exposes health, auth entry routes, catalog reads
 OpenAPI routes. Cart, wishlist, checkout, orders, profile, logout, and notifications remain
 authenticated and owner-scoped.
 
-## 3. Endpoint inventory
+### 3. Endpoint inventory
 
-### 3.1 `HLT` — health
+#### 3.1 `HLT` — health
 
 | ApiId | Endpoint | Auth | Purpose |
 |---|---|---|---|
@@ -84,7 +335,7 @@ Implemented response data:
 }
 ```
 
-### 3.2 `AUT` — authentication
+#### 3.2 `AUT` — authentication
 
 | ApiId | Endpoint | Auth | Purpose |
 |---|---|---|---|
@@ -98,13 +349,13 @@ Implemented response data:
 
 Password reset for signed-out users is out of scope; signed-in users use `AUT-0206`.
 
-### 3.3 `USR` — profile
+#### 3.3 `USR` — profile
 
 | ApiId | Endpoint | Auth | Purpose |
 |---|---|---|---|
 | `USR-0401` | `PATCH /me/profile` | Required | Partially update approved profile fields. |
 
-### 3.4 `CAT` — product catalog
+#### 3.4 `CAT` — product catalog
 
 | ApiId | Endpoint | Auth | Purpose |
 |---|---|---|---|
@@ -117,7 +368,7 @@ match the prototype: `featured,asc` (default), `price,asc`, `price,desc`, and `r
 also accepts `name,asc` and `createdAt,desc`. Every sort adds `id,asc` or `id,desc` as a stable
 tie-breaker.
 
-### 3.5 `CRT` — shopping cart
+#### 3.5 `CRT` — shopping cart
 
 | ApiId | Endpoint | Auth | Purpose |
 |---|---|---|---|
@@ -126,7 +377,7 @@ tie-breaker.
 | `CRT-0401` | `PATCH /cart/items/{itemId}` | Required | Set one item’s quantity. |
 | `CRT-0501` | `DELETE /cart/items/{itemId}` | Required | Remove one item. |
 
-### 3.6 `WSH` — wishlist
+#### 3.6 `WSH` — wishlist
 
 | ApiId | Endpoint | Auth | Purpose |
 |---|---|---|---|
@@ -134,7 +385,7 @@ tie-breaker.
 | `WSH-0201` | `POST /wishlist/items` | Required | Save a product; repeated save is idempotent. |
 | `WSH-0501` | `DELETE /wishlist/items/{productId}` | Required | Remove a saved product. |
 
-### 3.7 `ORD` — checkout and orders
+#### 3.7 `ORD` — checkout and orders
 
 | ApiId | Endpoint | Auth | Purpose |
 |---|---|---|---|
@@ -144,9 +395,9 @@ tie-breaker.
 | `ORD-0601` | `GET /orders/{orderId}` | Required | Read one caller-owned order and its items. |
 
 Order cancellation, returns, refunds, card processing, and payment callbacks are deferred from v1 as
-defined in [orders.md](features/orders.md).
+defined in [orders.md](features.md#orders-and-checkout).
 
-### 3.8 `NTF` — notifications
+#### 3.8 `NTF` — notifications
 
 | ApiId | Endpoint | Auth | Purpose |
 |---|---|---|---|
@@ -159,11 +410,11 @@ defined in [orders.md](features/orders.md).
 `GET /notifications` accepts `page`, `size`, and `filter=all|unread`, and sorts by
 `createdAt,desc,id,desc`.
 
-## 4. Contracts
+### 4. Contracts
 
 All v1 money examples and contracts use USD.
 
-### Endpoint field matrix
+#### Endpoint field matrix
 
 This matrix defines the request and response data for every inventory endpoint. The detailed examples
 below define shared shapes. Envelope `status` and `common` fields are omitted from the matrix.
@@ -202,20 +453,20 @@ below define shared shapes. Envelope `status` and `common` fields are omitted fr
 All request bodies reject unknown fields. `VALIDATION_ERROR` applies to malformed identifiers,
 missing required fields, invalid formats, unsupported enum values, and out-of-range values.
 
-### 4.1 `POST /auth/login` · `AUT-0201`
+#### 4.1 `POST /auth/login` · `AUT-0201`
 
 Returns 200, or `VALIDATION_ERROR`, `INVALID_CREDENTIALS`, `ACCOUNT_DISABLED`.
 
 `V3__add_user_public_fields.sql` provides the implemented public user identity fields. JWT payloads
 are not persisted; `V4__add_user_token_version.sql` provides account-wide logout revocation.
 
-#### Request
+##### Request
 
 ```json
 { "email": "alex@example.com", "password": "not-returned-or-logged" }
 ```
 
-#### Response · 200
+##### Response · 200
 
 ```json
 {
@@ -239,11 +490,11 @@ are not persisted; `V4__add_user_token_version.sql` provides account-wide logout
 `expiresIn` is the access-token lifetime in seconds. Passwords and password hashes never appear in a
 response. Where tokens are stored on the client remains a security implementation decision.
 
-### 4.2 `POST /auth/register` · `AUT-0202`
+#### 4.2 `POST /auth/register` · `AUT-0202`
 
 Returns 201, or `VALIDATION_ERROR`, `EMAIL_ALREADY_REGISTERED`.
 
-#### Request
+##### Request
 
 ```json
 {
@@ -253,7 +504,7 @@ Returns 201, or `VALIDATION_ERROR`, `EMAIL_ALREADY_REGISTERED`.
 }
 ```
 
-#### Response · 201
+##### Response · 201
 
 Returns the same token-pair and `user` shape as login because successful v1 registration signs the
 new user in immediately. `name` is required because the prototype collects Full name. The prototype's
@@ -261,7 +512,7 @@ new user in immediately. `name` is required because the prototype collects Full 
 must be 8–72 UTF-8 characters; the prototype's current six-character HTML hint must be corrected
 before it becomes a real client. Email verification and consent capture are deferred.
 
-### 4.2.1 Token lifecycle · `AUT-0203`, `AUT-0205`
+#### 4.2.1 Token lifecycle · `AUT-0203`, `AUT-0205`
 
 Refresh request:
 
@@ -280,13 +531,13 @@ logout. `AUT-0205` has no request body: it uses the authenticated access token a
 user's token version. This invalidates every access and refresh token previously issued to that
 account on all devices. The client must also discard its locally stored tokens.
 
-### 4.2.2 Password recovery · `AUT-0204`
+#### 4.2.2 Password recovery · `AUT-0204`
 
 Request: `{ "email": "alex@example.com" }`. The endpoint always returns 200 with `data: {}` for a
 well-formed email so account existence is not disclosed. Delivery and reset-completion endpoints are
 deferred.
 
-### 4.2.2.1 Change password · `AUT-0206`
+#### 4.2.2.1 Change password · `AUT-0206`
 
 Request: `{ "currentPassword": "password123", "newPassword": "newPassword456" }`. `newPassword`
 follows the registration rule (8–72 characters). A wrong `currentPassword` returns 400
@@ -295,12 +546,12 @@ hash is replaced and the token version increments, revoking every earlier access
 all devices. The response is a new token pair, shaped like `AUT-0203`, that the caller stores to stay
 signed in.
 
-### 4.2.3 Current user · `AUT-0601`
+#### 4.2.3 Current user · `AUT-0601`
 
 This is the single endpoint for reading the authenticated user's profile. It returns identity,
 timestamps, and the prototype navigation counts:
 
-#### Response · 200
+##### Response · 200
 
 ```json
 {
@@ -324,13 +575,13 @@ timestamps, and the prototype navigation counts:
 sum of current cart-item quantities, the wishlist counter is the number of saved products, and the
 order counter is the number of placed orders.
 
-### 4.3 `PATCH /me/profile` · `USR-0401`
+#### 4.3 `PATCH /me/profile` · `USR-0401`
 
 Returns 200, or `VALIDATION_ERROR`, `EMAIL_ALREADY_REGISTERED`. `name`, `email`, and `phone` match the
 current prototype; avatar support is not part of this contract. The scaffold currently stores names
 up to 100 characters, which is the API limit.
 
-#### Request
+##### Request
 
 ```json
 { "name": "Alex Morgan", "phone": "+855 12 345 678" }
@@ -338,7 +589,7 @@ up to 100 characters, which is the API limit.
 
 Omitted fields remain unchanged. An empty `phone` clears it; name and email cannot be cleared.
 
-#### Response · 200
+##### Response · 200
 
 ```json
 {
@@ -358,7 +609,7 @@ Omitted fields remain unchanged. An empty `phone` clears it; name and email cann
 }
 ```
 
-### 4.3.1 `GET /categories` · `CAT-0101`
+#### 4.3.1 `GET /categories` · `CAT-0101`
 
 Returns active categories ordered by `name,asc,id,asc`:
 
@@ -372,15 +623,15 @@ Returns active categories ordered by `name,asc,id,asc`:
 The prototype's `All` option is client-owned and is not a category row. Category symbols are also
 presentation choices rather than API fields.
 
-### 4.4 `GET /products` · `CAT-0102`
+#### 4.4 `GET /products` · `CAT-0102`
 
 Returns `Pagination<ProductSummary>` with 200, or `VALIDATION_ERROR`, `CATEGORY_NOT_FOUND`.
 
-#### Request
+##### Request
 
 `?page=0&size=20&sort=featured,asc&query=watch&categoryId=<uuid>&inStock=true`
 
-#### Response · 200
+##### Response · 200
 
 ```json
 {
@@ -420,18 +671,18 @@ Featured sorting places featured products by
 `featuredRank`, followed by non-featured products and a stable ID tie-breaker. Rating is retained
 because the prototype displays and sorts it, but its review source is deferred.
 
-### 4.5 `GET /products/{productId}` · `CAT-0601`
+#### 4.5 `GET /products/{productId}` · `CAT-0601`
 
 Returns 200 or `PRODUCT_NOT_FOUND`. The response uses all product-summary fields plus nullable
 `description`. `availableQuantity = 0` means out of stock; no duplicate availability flag is returned.
 The quantity picker is client state and is sent only when adding to the cart.
 
-### 4.6 `POST /cart/items` · `CRT-0201`
+#### 4.6 `POST /cart/items` · `CRT-0201`
 
 Returns the complete updated cart with 200, or `PRODUCT_NOT_FOUND`, `PRODUCT_OUT_OF_STOCK`,
 `INSUFFICIENT_STOCK`, `VALIDATION_ERROR`.
 
-#### Request
+##### Request
 
 ```json
 { "productId": "71d23f29-8e83-447d-b341-1cb0f2ef9151", "quantity": 1 }
@@ -440,7 +691,7 @@ Returns the complete updated cart with 200, or `PRODUCT_NOT_FOUND`, `PRODUCT_OUT
 If the product already exists in the cart, the quantity is increased atomically. The resulting
 quantity must not exceed current stock.
 
-#### Cart response shape
+##### Cart response shape
 
 ```json
 {
@@ -472,7 +723,7 @@ quantity must not exceed current stock.
 `lineTotal`, `subtotal`, and `itemCount` are derived from current USD catalog prices. Delivery is
 absent because it is calculated at checkout.
 
-### 4.6.1 Cart reads and mutations · `CRT-0601`, `CRT-0401`, `CRT-0501`
+#### 4.6.1 Cart reads and mutations · `CRT-0601`, `CRT-0401`, `CRT-0501`
 
 `GET /cart` returns the same `Cart` shape. A user without a persisted cart receives 200 with
 `id: null`, `items: []`, zero USD subtotal, `itemCount: 0`, and `updatedAt: null`; reading does not
@@ -488,7 +739,7 @@ Quantity must be an integer from 1 through the product's current `availableQuant
 body. Both mutations return the complete updated `Cart`, allowing the prototype's cards, subtotal,
 and cart badge to update from one response. Cart item `id` is distinct from product `id`.
 
-### 4.7 `POST /wishlist/items` · `WSH-0201`
+#### 4.7 `POST /wishlist/items` · `WSH-0201`
 
 Returns 201 when newly saved and 200 when already saved. Request:
 
@@ -504,12 +755,12 @@ their current quantity.
 `DELETE /wishlist/items/{productId}` has no body and returns `data: {}`. The path intentionally uses
 the product UUID because wishlist rows have no public identity in v1.
 
-### 4.8 `POST /orders/preview` · `ORD-0201`
+#### 4.8 `POST /orders/preview` · `ORD-0201`
 
 Validates current cart contents and returns calculated amounts without creating an order. Returns
 200, or `CART_EMPTY`, `INSUFFICIENT_STOCK`, `CHECKOUT_INVALID`.
 
-#### Request
+##### Request
 
 ```json
 {
@@ -523,7 +774,7 @@ Validates current cart contents and returns calculated amounts without creating 
 }
 ```
 
-#### Response data
+##### Response data
 
 ```json
 {
@@ -557,12 +808,12 @@ Validates current cart contents and returns calculated amounts without creating 
 Standard delivery is 2–4 business days and costs USD 4.00 in v1. The delivery window is configured
 copy, while the selected method is stored when the order is created. The preview expiry is 15 minutes.
 
-### 4.9 `POST /orders` · `ORD-0202`
+#### 4.9 `POST /orders` · `ORD-0202`
 
 Uses the same delivery and payment body as preview and requires `Idempotency-Key`. Returns the full
 created order with 201, or `CART_EMPTY`, `INSUFFICIENT_STOCK`, `CHECKOUT_INVALID`, `CONFLICT`.
 
-#### Response · 201
+##### Response · 201
 
 ```json
 {
@@ -601,7 +852,7 @@ Order item names and prices are snapshots and do not change when the product cha
 calculates every amount; client-supplied totals are ignored. On success, the purchased cart items are
 removed in the same transaction.
 
-### 4.10 `GET /orders` · `ORD-0101`
+#### 4.10 `GET /orders` · `ORD-0101`
 
 Returns `Pagination<OrderSummary>` sorted by `createdAt,desc,id,desc`. Summaries contain `id`,
 `reference`, `status`, `itemCount`, `total`, and `createdAt`; item lines appear only in
@@ -611,7 +862,7 @@ The optional `status=pending|confirmed|shipped|delivered` filter can back a futu
 without changing the prototype. `itemCount` is the sum of order-item quantities, matching the
 prototype's “N items/products” label.
 
-### 4.10.1 `GET /orders/{orderId}` · `ORD-0601`
+#### 4.10.1 `GET /orders/{orderId}` · `ORD-0601`
 
 Returns the `OrderDetail` shape shown for order creation, including item snapshots, delivery,
 `deliveryMethod`, `estimatedDelivery`, payment method, amounts, and `createdAt`. It also includes
@@ -622,15 +873,15 @@ activates none of those fulfillment steps.
 The endpoint returns `ORDER_NOT_FOUND` for both a missing order and an order owned by another user.
 It never falls back to the hard-coded address or payment values currently shown by the mock.
 
-### 4.11 `GET /notifications` · `NTF-0101`
+#### 4.11 `GET /notifications` · `NTF-0101`
 
 Returns `Pagination<NotificationResponse>` with 200. Notifications are owner-scoped and newest first.
 
-#### Request
+##### Request
 
 `?page=0&size=20&filter=all`
 
-#### Response · 200
+##### Response · 200
 
 ```json
 {
@@ -661,12 +912,12 @@ Returns `Pagination<NotificationResponse>` with 200. Notifications are owner-sco
 `createdAt` is the source for prototype relative labels such as “2 hours ago”; the API returns an
 absolute timestamp so clients can localize it.
 
-### 4.11.1 `GET /notifications/unread-count` · `NTF-0601`
+#### 4.11.1 `GET /notifications/unread-count` · `NTF-0601`
 
 Returns `{ "unreadCount": 2 }`. The count includes only rows where both `readAt` and `clearedAt` are
 null and drives the header dot/count. It is not a stored notification field.
 
-### 4.12 Notification mutations · `NTF-0201`, `NTF-0202`, `NTF-0501`
+#### 4.12 Notification mutations · `NTF-0201`, `NTF-0202`, `NTF-0501`
 
 The three endpoints have no request body. Marking an already-read notification is idempotent.
 `NTF-0201` returns the updated `Notification` and returns `NOTIFICATION_NOT_FOUND` when the id is
@@ -676,7 +927,7 @@ Mark-all returns `{ "updatedCount": 2, "unreadCount": 0 }`. Clear-all soft-clear
 and returns `{ "clearedCount": 3, "unreadCount": 0 }`. Both bulk operations return zero counts when
 the inbox is already in the target state. These counts let the prototype update without another read.
 
-## 5. Domain error catalogue
+### 5. Domain error catalogue
 
 | Code | HTTP | Type | Implementation | Raised when |
 |---|---:|---|---|---|
@@ -698,7 +949,7 @@ the inbox is already in the target state. These counts let the prototype update 
 | `CHECKOUT_INVALID` | 400 | VALIDATION | Implemented with orders | Delivery or payment input is incomplete/unsupported. |
 | `NOTIFICATION_NOT_FOUND` | 404 | NOT_FOUND | Implemented with notifications | Notification is absent, cleared, or belongs to another user. |
 
-## 6. Template for a new endpoint
+### 6. Template for a new endpoint
 
 ````markdown
 ### `<METHOD> /<path>` · `<AREA>-<NNNN>`
@@ -724,12 +975,12 @@ the inbox is already in the target state. These counts let the prototype update 
 ```
 ````
 
-### Endpoint checklist
+#### Endpoint checklist
 
 - [ ] ApiId is unique and in the correct number class.
 - [ ] Authentication and ownership scope are explicit.
 - [ ] Request and response include realistic values and the full envelope.
-- [ ] All errors exist in both this document and [API conventions](api-convention.md).
+- [ ] All errors exist in both this document and [API conventions](#api-conventions).
 - [ ] PATCH, nullable, absent, and derived fields are explained.
 - [ ] Lists state pagination, filters, sorting, and a unique tie-breaker.
-- [ ] The contract agrees with [Data model](data-model.md).
+- [ ] The contract agrees with [Data model](database.md).

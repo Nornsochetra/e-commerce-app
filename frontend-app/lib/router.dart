@@ -17,7 +17,7 @@ import 'screens/splash/splash_screen.dart';
 import 'screens/wishlist/wishlist_screen.dart';
 import 'widgets/layout/main_shell.dart';
 
-/// Screens a guest can't open; they are sent to /login first (requirement.md §7.2).
+/// Screens a guest can't open; they are sent to /login first (docs/requirements.md §7.2).
 const _signInRequired = ['/cart', '/wishlist', '/profile', '/checkout', '/orders', '/notifications'];
 
 bool _needsSignIn(String path) => _signInRequired.any((p) => path == p || path.startsWith('$p/'));

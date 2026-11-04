@@ -1,7 +1,7 @@
 /// Notification types in v1.
 enum NotificationType { order, offer, stock }
 
-/// An in-app notification (`Notification`, docs/api-specification.md §4.11). [readAt] null = unread.
+/// An in-app notification (`Notification`, docs/api.md, API specification §4.11). [readAt] null = unread.
 class AppNotification {
   final String id;
   final NotificationType type;

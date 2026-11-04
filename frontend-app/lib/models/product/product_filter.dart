@@ -1,4 +1,4 @@
-/// How the product list is ordered (docs/features/product-catalog.md §6).
+/// How the product list is ordered (docs/features.md, Product catalog §6).
 enum ProductSort {
   featured('Featured'),
   priceLow('Price: low to high'),

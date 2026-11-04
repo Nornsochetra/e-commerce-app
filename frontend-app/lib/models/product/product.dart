@@ -47,7 +47,7 @@ class Product {
       );
 
   /// Badges in display order. The API sends them in no particular order, and the client picks
-  /// the right one per context (docs/api-specification.md §4.4): NEW first, then BESTSELLER, PREMIUM_PICK.
+  /// the right one per context (docs/api.md, API specification §4.4): NEW first, then BESTSELLER, PREMIUM_PICK.
   List<String> get badgesInOrder {
     const order = ['NEW', 'BESTSELLER', 'PREMIUM_PICK'];
     int rank(String b) => order.contains(b) ? order.indexOf(b) : order.length;
@@ -60,7 +60,7 @@ class Product {
   /// "Only 3 left" style warning threshold used on product details.
   bool get lowStock => availableQuantity > 0 && availableQuantity <= 5;
 
-  /// Reads `ProductSummary` / `ProductDetail` from the API (docs/api-specification.md §4.4–4.5).
+  /// Reads `ProductSummary` / `ProductDetail` from the API (docs/api.md, API specification §4.4–4.5).
   /// The list leaves out `description`; product details include it (it may be null).
   /// Money arrives as a decimal string (`{"amount": "89.00", "currency": "USD"}`); the app only
   /// displays it, and the server calculates every total. Badges arrive lowercase ("premium_pick").

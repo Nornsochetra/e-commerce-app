@@ -1,7 +1,7 @@
 # APM app (Flutter)
 
 The APM mobile app. How to run it with the backend is in the [project README](../README.md);
-the folder structure and conventions are in [`docs/frontend/flutter-structure.md`](../docs/frontend/flutter-structure.md).
+the folder structure and conventions are in [`docs/flutter.md`](../docs/flutter.md).
 
 ```bash
 flutter pub get

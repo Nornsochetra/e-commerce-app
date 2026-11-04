@@ -1,4 +1,4 @@
-/// One line in the shopping cart (`CartItem` in docs/api-specification.md §4.6).
+/// One line in the shopping cart (`CartItem` in docs/api.md, API specification §4.6).
 /// [id] is the cart line's own id (used to change or remove it); [productId] is the product.
 class CartItem {
   final String id;

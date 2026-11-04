@@ -1,23 +1,8 @@
----
-spec: SPEC-DATA-MODEL
-title: Data Model
-status: draft
-owner: Backend
-depends_on: [SPEC-API-CONVENTIONS]
-last_updated: 2026-08-27
----
-
-# Data model
+# Database
 
 ## 1. Overview
 
 PostgreSQL relational model for the scaffolded backend and the approved v1 target schema.
-
-Companion documents:
-
-- [API conventions](api-convention.md)
-- [API specification](api-specification.md)
-- [Backend initialization blueprint](backend/backend-init-blueprint.md)
 
 > **Implementation boundary:** Migrations V1 through V8 are currently applied.
 
@@ -54,6 +39,14 @@ order stores an immutable delivery-address snapshot. Separate `product_images` a
 tables should be introduced only when multiple images or reusable saved addresses enter the API.
 
 ## 4. Entity relationship diagram
+
+A drawn version with every column, PK/FK markers and crow’s-foot lines is [erd.png](images/erd.png). It is
+generated from [erd.html](images/erd.html): change the tables there, then take a 2090×790 screenshot with
+headless Chrome (`--window-size=2090,790 --screenshot=erd.png`).
+
+![APM entity relationship diagram](images/erd.png)
+
+The same relationships as a Mermaid diagram:
 
 ```mermaid
 erDiagram
