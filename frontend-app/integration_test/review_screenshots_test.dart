@@ -7,8 +7,12 @@ import 'package:frontend_app/services/api/token_storage.dart';
 import 'package:frontend_app/services/auth/dev_account.dart';
 import 'package:frontend_app/services/cart/cart_service.dart';
 import 'package:frontend_app/services/wishlist/wishlist_service.dart';
+import 'package:frontend_app/widgets/buttons/app_button.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// The dev account's password, when it was changed from the seeded one: --dart-define=DEV_PASSWORD=…
+const devPassword = String.fromEnvironment('DEV_PASSWORD', defaultValue: devAccountPassword);
 
 /// Walks through the finished screens on a real simulator and saves screenshots for review.
 /// Everything uses the real API, so start the backend first (see CLAUDE.md). The cart and wishlist
@@ -37,7 +41,7 @@ void main() {
     const backpack = '33333333-3333-4333-8333-333333333333';
     const sunglasses = '55555555-5555-4555-8555-555555555555';
     final api = ApiClient(tokens: MemoryTokenStorage());
-    final login = await api.post('/auth/login', body: {'email': devAccountEmail, 'password': devAccountPassword}, auth: false);
+    final login = await api.post('/auth/login', body: {'email': devAccountEmail, 'password': devPassword}, auth: false);
     await api.tokens.save(TokenPair.fromJson(login as Map<String, dynamic>));
     final carts = CartService(api);
     for (final line in (await carts.getCart()).items) {
@@ -52,7 +56,7 @@ void main() {
 
   Future<void> fillInDevAccount(WidgetTester tester) async {
     await tester.enterText(find.byType(TextField).at(0), devAccountEmail);
-    await tester.enterText(find.byType(TextField).at(1), devAccountPassword);
+    await tester.enterText(find.byType(TextField).at(1), devPassword);
     await tester.pump();
   }
 
@@ -106,6 +110,8 @@ void main() {
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -520));
     await wait(tester, 1500);
     await binding.takeScreenshot('s3_02_home_trending');
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, 520));
+    await wait(tester, 800);
 
     await tap(tester, find.byTooltip('Filter products'));
     await wait(tester, 2000);
@@ -129,7 +135,7 @@ void main() {
     await wait(tester, 1000);
     await binding.takeScreenshot('s3_07_product_more');
 
-    await tap(tester, find.byTooltip('Back'));
+    await tap(tester, find.byTooltip('Go back'));
     await wait(tester, 800);
     await tap(tester, find.textContaining('Electronics'));
     await wait(tester, 800);
@@ -159,7 +165,9 @@ void main() {
     await tap(tester, find.text('Checkout'));
     await wait(tester, 1500);
     await binding.takeScreenshot('s4_03_checkout');
-    await tap(tester, find.text('Edit'));
+    // With no saved address the form is already open ("Done"); otherwise open it.
+    if (find.text('Edit').evaluate().isNotEmpty) await tap(tester, find.text('Edit'));
+    await wait(tester, 400);
     await tester.enterText(find.byType(TextField).at(2), 'Phnom');
     await tap(tester, find.text('Place order'));
     await wait(tester, 400);
@@ -195,6 +203,7 @@ void main() {
     await binding.takeScreenshot('s5_02_profile');
     await tap(tester, find.text('Edit'));
     await wait(tester, 800);
+    await binding.takeScreenshot('s5_03a_edit_profile');
     await tester.enterText(find.byType(TextField).at(1), 'alex@');
     await tap(tester, find.text('Save changes'));
     await wait(tester, 400);
@@ -202,6 +211,20 @@ void main() {
     await tap(tester, find.text('Cancel'));
     await wait(tester, 800);
     await binding.takeScreenshot('s5_04_discard_changes');
+    await tap(tester, find.text('Discard'));
+    await wait(tester, 800);
+
+    await tap(tester, find.text('Change password'));
+    await wait(tester, 800);
+    await binding.takeScreenshot('s5_04a_change_password');
+    await tester.enterText(find.byType(TextField).at(0), devPassword);
+    await tester.enterText(find.byType(TextField).at(1), 'NewPassw0rd!');
+    await tester.enterText(find.byType(TextField).at(2), 'Different1!'); // mismatch: nothing is sent
+    await tap(tester, find.widgetWithText(AppButton, 'Change password'));
+    await wait(tester, 400);
+    await binding.takeScreenshot('s5_04b_change_password_errors');
+    await tap(tester, find.text('Cancel'));
+    await wait(tester, 800);
     await tap(tester, find.text('Discard'));
     await wait(tester, 800);
 
