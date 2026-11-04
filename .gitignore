@@ -43,3 +43,6 @@ frontend-app/.pub-cache/
 frontend-app/.pub/
 frontend-app/build/
 frontend-app/coverage/
+
+# Local assistant instructions (kept on each machine, not shared)
+CLAUDE.md
